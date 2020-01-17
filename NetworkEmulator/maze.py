@@ -11,13 +11,14 @@ class Cell():
         self.east = True
         self.south = True
         self.west = True
+        self.final = False
     def __repr__(self):
         return "%d,%d\t%s N:%s E:%s S:%s W:%s"%(self.x, self.y, str(self.visited),
             str(self.north), str(self.east), str(self.south), str(self.west))
 
 """Maze class
 
-Contains the database of the maze and generator functions
+Contains the database of the mgit@github.com:Jojojoppe/CPS_EPROJ.gitaze and generator functions
 """
 class Maze():
     def __init__(self, w=16, h=16):
@@ -58,6 +59,28 @@ class Maze():
                         self.grid[chosen].west = False
                 self.grid[chosen].visited = True
                 stack.append(chosen)
+        # Generate random endpoint
+        side = random.randint(0,3)
+        # North
+        if side==0:
+            nr = random.randint(0,self.width)
+            self.grid[(nr, 0)].north = False
+            self.grid[(nr, 0)].final = True
+        # South
+        elif side==1:
+            nr = random.randint(0,self.width)
+            self.grid[(nr, self.height-1)].south = False
+            self.grid[(nr, self.height-1)].final = True
+        # East
+        elif side==2:
+            nr = random.randint(0,self.height)
+            self.grid[(self.width-1, nr)].east = False
+            self.grid[(self.width-1, nr)].final = True
+        # West
+        elif side==3:
+            nr = random.randint(0,self.width)
+            self.grid[(0, nr)].west = False
+            self.grid[(0, nr)].final = True
 
     def get_neighbours(self, c:Cell):
         res = []

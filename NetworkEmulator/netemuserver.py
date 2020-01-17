@@ -9,6 +9,8 @@ from message import Message
 from node import Node
 from server_gui import GuiThread
 
+from maze import Maze
+
 import argparse
 parser = argparse.ArgumentParser(description='NetEmu Server')
 parser.add_argument('config_file', default='config.ini', type=str, help='Config file')
@@ -17,6 +19,7 @@ parser.add_argument('config_file', default='config.ini', type=str, help='Config 
 running = True
 nodes = {}
 config = {}
+maze = Maze()
 
 class ThreadConnection(threading.Thread):
     def __init__(self, socket, address, port):
@@ -97,7 +100,7 @@ def close_handler(signal, reserved):
     running = False
 
 def main():
-    global running, config
+    global running, config, maze
     args = parser.parse_args()
 
     print('NetEmu Server')
@@ -110,12 +113,18 @@ def main():
     maxcon = config.get('connection', 'maxcon', fallback='10')
     ip = config.get('connection', 'ip', fallback="localhost")
 
+    # Generate maze
+    maze_w = int(config.get('maze', 'width', fallback='16'))
+    maze_h = int(config.get('maze', 'height', fallback='16'))
+    maze = Maze(maze_w, maze_h)
+    maze.generate()
+
     # List of all connections (active and non-active)
     connections = []
 
     with TCPServer(int(port), int(maxcon), ip=ip) as server:
 
-        gui_thread = GuiThread(nodes, config)
+        gui_thread = GuiThread(nodes, config, maze)
         gui_thread.start()
 
         while running:

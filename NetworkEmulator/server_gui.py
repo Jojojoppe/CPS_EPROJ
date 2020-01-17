@@ -3,11 +3,12 @@ import numpy as np
 import pygame
 
 class GuiThread(threading.Thread):
-    def __init__(self, nodes, config):
+    def __init__(self, nodes, config, maze):
         threading.Thread.__init__(self, name='GuiThread')
         self.nodes = nodes
         self.config = config
         self.running = True
+        self.maze = maze
 
         self.width = int(config.get('gui', 'window_size_x', fallback=400))
         self.height = int(config.get('gui', 'window_size_y', fallback=400))
@@ -82,15 +83,17 @@ class GuiThread(threading.Thread):
         return ((self.zoom*length))*(self.scaler/2)
 
     # ENVIRONMENT
-    env = [
-        # (x,y)1        (x,y)2          (R,G,B)     w
-        ((-8.0,-8.0),   (-8.0,8.0),     (0,0,0),    4),
-        ((-8.0,-8.0),   (8.0,-8.0),     (0,0,0),    4),
-        ((8.0,8.0),     (-8.0,8.0),     (0,0,0),    4),
-        ((8.0,8.0),     (8.0,-8.0),     (0,0,0),    4),
-    ]
-
     def draw_environment(self):
-        for e in self.env:
-            p1, p2, clr, w = e
-            pygame.draw.line(self.window, clr, self.get_screen_position(p1), self.get_screen_position(p2), w)
+        m = self.maze
+        gs = self.height//(m.height+2)
+        offs = gs
+        for w in range(m.width):
+            for h in range(m.height):
+                if m.grid[(w,h)].west:
+                    pygame.draw.line(self.window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+w*gs, offs+(h+1)*gs), 1)
+                if m.grid[(w,h)].north:
+                    pygame.draw.line(self.window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+(w+1)*gs, offs+h*gs), 1)
+                if m.grid[(w,h)].east:
+                    pygame.draw.line(self.window, (0,0,0), (offs+(w+1)*gs, offs+h*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
+                if m.grid[(w,h)].south:
+                    pygame.draw.line(self.window, (0,0,0), (offs+w*gs, offs+(h+1)*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
