@@ -45,7 +45,6 @@ class ThreadConnection(threading.Thread):
         msg = None
 
         # Send the maze to the connected node
-        # TODO
         m = Message.create(b'\x02\x00'+pickle.dumps(maze))
         self.socket.send(m.packet())
 
@@ -120,10 +119,12 @@ def main():
     ip = config.get('connection', 'ip', fallback="localhost")
 
     # Generate maze
+    # TODO or load form file if said in config
     maze_w = int(config.get('maze', 'width', fallback='16'))
     maze_h = int(config.get('maze', 'height', fallback='16'))
     maze = Maze(maze_w, maze_h)
     maze.generate()
+    # TODO save maze to file
 
     # List of all connections (active and non-active)
     connections = []
