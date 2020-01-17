@@ -1,0 +1,6 @@
+#!/bin/bash
+
+tar -czf NetEmu.tar.gz NetEmu
+distrun/distrun server.ip EPROJ/server.ip ""
+distrun/distrun aruco.py EPROJ/aruco.py ""
+distrun/distrun NetEmu.tar.gz EPROJ/x "tar -xzf EPROJ/x -C EPROJ && rm EPROJ/x"

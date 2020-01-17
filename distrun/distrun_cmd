@@ -1,0 +1,11 @@
+#/bin/bash
+
+BOT1="130.89.85.64"
+BOT2="130.89.86.154"
+BOT3="130.89.80.215"
+
+CMD=$1
+
+ssh pi@$BOT1 $CMD &
+ssh pi@$BOT2 $CMD &
+ssh pi@$BOT3 $CMD &
