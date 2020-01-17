@@ -17,8 +17,6 @@ class GuiThread(threading.Thread):
         self.fpsCam = pygame.time.Clock()
         self.window = pygame.display.set_mode((self.width, self.height), 0, 32)
 
-        self.zoom = float(config.get('gui', 'zoom', fallback='1.0'))
-        self.zoom_speed = float(config.get('gui', 'zoom_speed', fallback='1.1'))
         self.tx_line1 = int(config.get('gui', 'tx_line1', fallback='-40'))
         self.tx_line2 = int(config.get('gui', 'tx_line2', fallback='-80'))
 
@@ -55,16 +53,7 @@ class GuiThread(threading.Thread):
                 pygame.draw.circle(self.window, clr, (int(x), int(y)), int(self.get_screen_length(d)), 1)
 
             for event in pygame.event.get():
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 4:
-                    if self.zoom_speed != 0.0:
-                        self.zoom *= self.zoom_speed
-                        if self.config.get('logging', 'zooming', fallback='false')=='true':
-                            print("Zoom: ", self.zoom)
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 5:
-                    if self.zoom_speed != 0.0:
-                        self.zoom /= self.zoom_speed
-                        if self.config.get('logging', 'zooming', fallback='false')=='true':
-                            print("Zoom: ", self.zoom)
+                pass
 
             pygame.display.update()
             self.fpsCam.tick(15)
@@ -75,12 +64,18 @@ class GuiThread(threading.Thread):
 
     def get_screen_position(self, pos):
         x, y = pos
-        wx = ((self.zoom*x)+1)*(self.scaler/2)
-        wy = ((self.zoom*y)+1)*(self.scaler/2)
+        m = self.maze
+        gs = self.height//(m.height+2)
+        offs = gs
+
+        wx = (x+0.5)*gs+offs
+        wy = (y+0.5)*gs+offs
         return wx,wy
 
     def get_screen_length(self, length):
-        return ((self.zoom*length))*(self.scaler/2)
+        m = self.maze
+        gs = self.height//(m.height+2)
+        return gs*length
 
     # ENVIRONMENT
     def draw_environment(self):

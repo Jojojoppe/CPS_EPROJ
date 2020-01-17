@@ -93,8 +93,8 @@ if __name__=="__main__":
     ip=f.read()
     f.close()
 
-    x = (random.random()-0.5)*16.0
-    y = (random.random()-0.5)*16.0
+    x = 0.0
+    y = 0.0
 
     cl = NetEmuClient(recv, ip, 8080)
     cl.start()
