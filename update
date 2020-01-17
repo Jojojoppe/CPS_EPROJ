@@ -1,0 +1,5 @@
+#!/bin/bash
+
+tar -czf x.tar.gz NetworkEmulator controller
+distrun/distrun server.ip EPROJ/server.ip ""
+distrun/distrun x.tar.gz EPROJ/x "tar -xzf EPROJ/x -C EPROJ && rm EPROJ/x"
