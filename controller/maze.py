@@ -73,10 +73,10 @@ class Maze():
                 print(self.grid[(w,h)])
 
 if __name__=="__main__":
-    m = Maze(40, 40)
+    m = Maze()
     m.generate()
 
-    gs = 8
+    gs = 16
     offs = 16
 
     pygame.init()
