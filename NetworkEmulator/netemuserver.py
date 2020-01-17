@@ -3,13 +3,13 @@ import socket
 import threading
 import signal
 import configparser
+import pickle
 
 from tcp import TCPServer
 from message import Message
 from node import Node
 from server_gui import GuiThread
-
-from maze import Maze
+from maze import Maze, Cell
 
 import argparse
 parser = argparse.ArgumentParser(description='NetEmu Server')
@@ -37,12 +37,18 @@ class ThreadConnection(threading.Thread):
         self.socket.close()
 
     def run(self):
-        global nodes, config
+        global nodes, config, maze
         self.running = True
         if config.get('logging', 'connection_status', fallback='false')=='true':
             print("> Connection opened from %s:%d"%(self.address,self.port))
         buf = b''
         msg = None
+
+        # Send the maze to the connected node
+        # TODO
+        m = Message.create(b'\x02\x00'+pickle.dumps(maze))
+        self.socket.send(m.packet())
+
         while self.running:
 
             # Send data if possible

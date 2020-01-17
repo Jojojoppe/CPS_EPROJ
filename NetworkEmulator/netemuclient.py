@@ -1,8 +1,10 @@
 import struct
 import threading
 import random
+import pickle
 from message import Message
 from tcp import TCPClient
+from maze import Maze, Cell
 
 class NetEmuClient(threading.Thread):
     def __init__(self, recv_func, ip, port):
@@ -11,6 +13,8 @@ class NetEmuClient(threading.Thread):
         self.x = 0.0
         self.y = 0.0
         self.tx = 1.0
+
+        self.maze = None
 
         self.client = TCPClient(ip, port)
         self.client.start()
@@ -45,6 +49,9 @@ class NetEmuClient(threading.Thread):
                     # DATA received
                     rssi = struct.unpack('b', msg.data[1:2])[0]
                     self.recv_func(msg.data[2:], rssi)
+                elif msg.data[0]==2:
+                    # MAZE recieved
+                    self.maze = pickle.loads(msg.data[2:])
                 else:
                     # UNKNOWN
                     pass
@@ -83,6 +90,12 @@ class NetEmuClient(threading.Thread):
         cmsg = Message.create(cdat)
         self.client.send(cmsg.packet())
 
+    """Wait for maze to be received
+    """
+    def waitForMaze(self):
+        while self.maze==None:
+            pass
+
 def recv(packet=b'', rssi=0):
     print(rssi, packet)
 
@@ -98,6 +111,10 @@ if __name__=="__main__":
 
     cl = NetEmuClient(recv, ip, 8080)
     cl.start()
+    cl.waitForMaze()
+    print("Maze received!")
+    cl.maze.print_grid()
+
     cl.position(x, y)
     cl.txpower(0.1)
 

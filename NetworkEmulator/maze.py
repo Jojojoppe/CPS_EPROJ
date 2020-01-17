@@ -1,5 +1,5 @@
 import random
-import pygame
+# import pygame
 from enum import Enum
 
 class Cell():
@@ -63,22 +63,22 @@ class Maze():
         side = random.randint(0,3)
         # North
         if side==0:
-            nr = random.randint(0,self.width)
+            nr = random.randint(0,self.width-1)
             self.grid[(nr, 0)].north = False
             self.grid[(nr, 0)].final = True
         # South
         elif side==1:
-            nr = random.randint(0,self.width)
+            nr = random.randint(0,self.width-1)
             self.grid[(nr, self.height-1)].south = False
             self.grid[(nr, self.height-1)].final = True
         # East
         elif side==2:
-            nr = random.randint(0,self.height)
+            nr = random.randint(0,self.height-1)
             self.grid[(self.width-1, nr)].east = False
             self.grid[(self.width-1, nr)].final = True
         # West
         elif side==3:
-            nr = random.randint(0,self.width)
+            nr = random.randint(0,self.height-1)
             self.grid[(0, nr)].west = False
             self.grid[(0, nr)].final = True
 
@@ -95,28 +95,28 @@ class Maze():
             for w in range(self.width):
                 print(self.grid[(w,h)])
 
-if __name__=="__main__":
-    m = Maze()
-    m.generate()
+# if __name__=="__main__":
+#     m = Maze()
+#     m.generate()
 
-    gs = 16
-    offs = 16
+#     gs = 16
+#     offs = 16
 
-    pygame.init()
-    window = pygame.display.set_mode((2*offs+gs*m.width, 2*offs+gs*m.height), 0, 32)
-    while True:
-        window.fill((255, 255, 255))
+#     pygame.init()
+#     window = pygame.display.set_mode((2*offs+gs*m.width, 2*offs+gs*m.height), 0, 32)
+#     while True:
+#         window.fill((255, 255, 255))
 
-        for w in range(m.width):
-            for h in range(m.height):
-                if m.grid[(w,h)].west:
-                    pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+w*gs, offs+(h+1)*gs), 1)
-                if m.grid[(w,h)].north:
-                    pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+(w+1)*gs, offs+h*gs), 1)
-                if m.grid[(w,h)].east:
-                    pygame.draw.line(window, (0,0,0), (offs+(w+1)*gs, offs+h*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
-                if m.grid[(w,h)].south:
-                    pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+(h+1)*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
+#         for w in range(m.width):
+#             for h in range(m.height):
+#                 if m.grid[(w,h)].west:
+#                     pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+w*gs, offs+(h+1)*gs), 1)
+#                 if m.grid[(w,h)].north:
+#                     pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+(w+1)*gs, offs+h*gs), 1)
+#                 if m.grid[(w,h)].east:
+#                     pygame.draw.line(window, (0,0,0), (offs+(w+1)*gs, offs+h*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
+#                 if m.grid[(w,h)].south:
+#                     pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+(h+1)*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
         
-        pygame.display.update()
-    pygame.quit()
+#         pygame.display.update()
+#     pygame.quit()
