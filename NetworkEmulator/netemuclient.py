@@ -106,8 +106,8 @@ if __name__=="__main__":
     ip=f.read()
     f.close()
 
-    x = 0.0
-    y = 0.0
+    x = random.randint(0,15)
+    y = random.randint(0,15)
 
     cl = NetEmuClient(recv, ip, 8080)
     cl.start()
@@ -116,7 +116,7 @@ if __name__=="__main__":
     cl.maze.print_grid()
 
     cl.position(x, y)
-    cl.txpower(0.1)
+    cl.txpower(0.4)
 
     while True:
         i=input()

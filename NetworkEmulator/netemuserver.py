@@ -4,6 +4,7 @@ import threading
 import signal
 import configparser
 import pickle
+import datetime
 
 from tcp import TCPServer
 from message import Message
@@ -118,13 +119,19 @@ def main():
     maxcon = config.get('connection', 'maxcon', fallback='10')
     ip = config.get('connection', 'ip', fallback="localhost")
 
-    # Generate maze
-    # TODO or load form file if said in config
-    maze_w = int(config.get('maze', 'width', fallback='16'))
-    maze_h = int(config.get('maze', 'height', fallback='16'))
-    maze = Maze(maze_w, maze_h)
-    maze.generate()
-    # TODO save maze to file
+    # Generate maze or load from file
+    mazefile = config.get('maze', 'load', fallback=None)
+    if mazefile==None:
+        print("Generating maze...")
+        maze_w = int(config.get('maze', 'width', fallback='16'))
+        maze_h = int(config.get('maze', 'height', fallback='16'))
+        maze = Maze(maze_w, maze_h)
+        maze.generate()
+        maze.save("%s.maze"%str(datetime.datetime.now()))
+        print("Maze saved")
+    else:
+        print("Loading maze: %s"%mazefile)
+        maze = Maze.load(mazefile)
 
     # List of all connections (active and non-active)
     connections = []

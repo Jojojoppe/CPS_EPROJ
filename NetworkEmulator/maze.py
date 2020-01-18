@@ -1,4 +1,5 @@
 import random
+import pickle
 # import pygame
 from enum import Enum
 
@@ -94,6 +95,18 @@ class Maze():
         for h in range(self.height):
             for w in range(self.width):
                 print(self.grid[(w,h)])
+            
+    @classmethod
+    def load(cls, path):
+        f = open(path, "rb")
+        maze = pickle.loads(f.read())
+        f.close()
+        return maze
+
+    def save(self, path):
+        f = open(path, "wb")
+        f.write(pickle.dumps(self))
+        f.close()
 
 # if __name__=="__main__":
 #     m = Maze()

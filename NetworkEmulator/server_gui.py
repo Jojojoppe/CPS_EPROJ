@@ -41,7 +41,7 @@ class GuiThread(threading.Thread):
                     if self.config.get('gui', 'draw_line', fallback='true')=='true':
                         for n in node.tx_list:
                             px,py = self.get_screen_position(n)
-                            pygame.draw.line(self.window, (0,0,0), (int(px), int(py)), (int(x), int(y)), 1)
+                            pygame.draw.line(self.window, (0,0,0), (int(px), int(py)), (int(x), int(y)), 4)
                 elif node.rx_ctl:
                     node.rx_ctl = False
                     if self.config.get('gui', 'clr_change_ctl', fallback='true')=='true':
