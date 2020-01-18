@@ -3,12 +3,13 @@ import numpy as np
 import pygame
 
 class GuiThread(threading.Thread):
-    def __init__(self, nodes, config, maze):
+    def __init__(self, nodes, config, maze, stopfunc):
         threading.Thread.__init__(self, name='GuiThread')
         self.nodes = nodes
         self.config = config
         self.running = True
         self.maze = maze
+        self.stopfunc = stopfunc
 
         self.width = int(config.get('gui', 'window_size_x', fallback=400))
         self.height = int(config.get('gui', 'window_size_y', fallback=400))
@@ -53,7 +54,8 @@ class GuiThread(threading.Thread):
                 pygame.draw.circle(self.window, clr, (int(x), int(y)), int(self.get_screen_length(d)), 1)
 
             for event in pygame.event.get():
-                pass
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    self.stopfunc(0, 0)
 
             pygame.display.update()
             self.fpsCam.tick(15)

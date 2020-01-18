@@ -59,7 +59,7 @@ class Node():
 
     # Send a message to this node
     def send(self, msg:Message):
-        if self.config.get('logging', 'rec_msg', fallback='true')=='true':
+        if self.config.get('logging', 'rec_msg', fallback='false')=='true':
             print('[%s] rec: %s'%(str(self.index), str(msg)))
         self.message_buffer.append(msg)
 

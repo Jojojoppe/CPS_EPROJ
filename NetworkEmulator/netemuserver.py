@@ -138,7 +138,7 @@ def main():
 
     with TCPServer(int(port), int(maxcon), ip=ip) as server:
 
-        gui_thread = GuiThread(nodes, config, maze)
+        gui_thread = GuiThread(nodes, config, maze, close_handler)
         gui_thread.start()
 
         while running:
