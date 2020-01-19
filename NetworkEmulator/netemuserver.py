@@ -47,6 +47,7 @@ class ThreadConnection(threading.Thread):
 
         # Send the maze to the connected node
         m = Message.create(b'\x02\x00'+pickle.dumps(maze))
+        print(m.length)
         self.socket.send(m.packet())
 
         while self.running:

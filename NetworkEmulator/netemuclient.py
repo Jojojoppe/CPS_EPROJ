@@ -111,9 +111,9 @@ if __name__=="__main__":
 
     cl = NetEmuClient(recv, ip, 8080)
     cl.start()
-    cl.waitForMaze()
-    print("Maze received!")
-    cl.maze.print_grid()
+    #cl.waitForMaze()
+    #print("Maze received!")
+    #cl.maze.print_grid()
 
     cl.position(x, y)
     cl.txpower(0.4)
