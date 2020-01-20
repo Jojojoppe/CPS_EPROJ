@@ -79,7 +79,6 @@ def main():
         else:
             filtered = 0.5*middle + 0.5*filtered
 
-        # TODO make the range [0, 1)
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
 
