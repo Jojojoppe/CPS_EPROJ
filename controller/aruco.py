@@ -84,9 +84,9 @@ def main():
         aruco_and_middle = (ids, send)
 
 
-        # cv2.drawContours(res, contours, -1, (0,255,0), 3)
-        # cv2.imshow("Detected marker", marker)
-        # cv2.imshow("Result", res)
+        cv2.drawContours(res, contours, -1, (0,255,0), 3)
+        cv2.imshow("Detected marker", marker)
+        cv2.imshow("Result", res)
 
         key = cv2.waitKey(1) & 0xFF
         rawCapture.truncate(0)

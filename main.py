@@ -5,8 +5,8 @@ import controller.aruco as aruco
 import NetworkEmulator.netemuclient as netemuclient
 
 
-base_speed = 150
-kp = 50
+base_speed = 170
+kp = 80
 
 
 def get_control_out(p0):
