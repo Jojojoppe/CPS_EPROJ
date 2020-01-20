@@ -8,7 +8,8 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 
 camera = PiCamera()
-camera.resolution = (320, 240)
+x_res = 320
+camera.resolution = (x_res, 240)
 camera.framerate = 32
 camera.rotation = 180
 rawCapture = PiRGBArray(camera, size=(320, 240))
@@ -29,13 +30,8 @@ def get_result():
 
 
 def concat(raw):
-    return raw / 320
-
-
-
-
-
-
+    global x_res
+    return raw / x_res
 
 
 def main():
@@ -84,12 +80,13 @@ def main():
             filtered = 0.5*middle + 0.5*filtered
 
         # TODO make the range [0, 1)
-        aruco_and_middle = (ids, concat(filtered))
+        send = round(concat(filtered), 3)
+        aruco_and_middle = (ids, send)
 
 
-        cv2.drawContours(res, contours, -1, (0,255,0), 3)
-        cv2.imshow("Detected marker", marker)
-        cv2.imshow("Result", res)
+        # cv2.drawContours(res, contours, -1, (0,255,0), 3)
+        # cv2.imshow("Detected marker", marker)
+        # cv2.imshow("Result", res)
 
         key = cv2.waitKey(1) & 0xFF
         rawCapture.truncate(0)

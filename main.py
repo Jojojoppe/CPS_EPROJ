@@ -4,18 +4,18 @@ import random
 import controller.aruco as aruco
 import NetworkEmulator.netemuclient as netemuclient
 
-# P controller
-# P_out = P0 + Kp * e
-# Per wheel assume that P0 is a constant for driving spesified in this file
+
+base_speed = 150
+kp = 50
 
 
-base_speed = 230
-kp = 55
+def get_control_out(p0):
+    # P controller
+    # P_out = P0 + Kp * e
+    # Per wheel assume that P0 is a constant for driving spesified in this file
 
-
-def get_control_out(target):
     global base_speed
-    error = target - 0.5 # Deviation from middle
+    error = p0 - 0.5 # Deviation from middle
     
     # TODO maybe swap out the signs
     left  = base_speed + kp * error
@@ -25,9 +25,10 @@ def get_control_out(target):
 
 def drive_forwards(target):
     left, right = get_control_out(target)
+    print(target, "left", int(left),"right", int(right))
+
     gopigo.set_left_speed(int(left))
     gopigo.set_right_speed(int(right))
-    gopigo.fwd()
 
 def recv(data:bytes, rssi:int):
     print(rssi, data)
@@ -48,11 +49,26 @@ def main():
     # y = random.randint(0,15)
     # network.position(x, y)
     # network.txpower(0.4)
-
+    gopigo.set_left_speed(0)
+    gopigo.set_right_speed(0)
+    gopigo.fwd()
     while True:
-        # i=input()
-        # network.send(bytes(i, 'utf-8'))
-        print(aruco.get_result())
+        # Get the aruco id and the control base
+        (marker, t) = aruco.get_result()
+        if marker != None: marker = int(marker)
+
+
+        if marker == None or marker == -1:
+            drive_forwards(t)
+        else:
+            print("stop")
+            gopigo.set_left_speed(0)
+            gopigo.set_right_speed(0)
+            # break
+
+
+
+
 
 if __name__ == "__main__":
     try:
