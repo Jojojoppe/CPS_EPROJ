@@ -106,8 +106,7 @@ atexit.register(stop_thread)
 
 if __name__ == "__main__":
     try:
-        while not stop_pls: print(get_result())
-        while not stop_pls: pass
+        pass
 
     except KeyboardInterrupt:
         stop_thread()

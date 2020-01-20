@@ -1,12 +1,12 @@
 import gopigo
 import random
-
+import time
 import controller.aruco as aruco
 import NetworkEmulator.netemuclient as netemuclient
 
 
-base_speed = 170
-kp = 80
+base_speed = 150
+kp = 100
 
 
 def get_control_out(p0):
@@ -17,7 +17,6 @@ def get_control_out(p0):
     global base_speed
     error = p0 - 0.5 # Deviation from middle
     
-    # TODO maybe swap out the signs
     left  = base_speed + kp * error
     right = base_speed - kp * error
     return left, right
@@ -25,7 +24,7 @@ def get_control_out(p0):
 
 def drive_forwards(target):
     left, right = get_control_out(target)
-    print(target, "left", int(left),"right", int(right))
+    # print(target, "left", int(left),"right", int(right))
 
     gopigo.set_left_speed(int(left))
     gopigo.set_right_speed(int(right))
@@ -52,21 +51,28 @@ def main():
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
     gopigo.fwd()
+    prev_marker = -1
+
     while True:
         # Get the aruco id and the control base
         (marker, t) = aruco.get_result()
         if marker != None: marker = int(marker)
 
-
         if marker == None or marker == -1:
             drive_forwards(t)
-        else:
-            print("stop")
+
+        elif marker != prev_marker:
+            prev_marker = marker
+            print("stop", marker)
             gopigo.set_left_speed(0)
             gopigo.set_right_speed(0)
-            # break
+            gopigo.stop()
+            time.sleep(1)
+            gopigo.fwd()
+        else:
+            drive_forwards(t)
 
-
+    main()
 
 
 
@@ -77,3 +83,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         gopigo.stop()
         aruco.stop_pls = True 
+    except Exception:
+        main()
