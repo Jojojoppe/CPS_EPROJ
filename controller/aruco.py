@@ -9,6 +9,7 @@ from picamera import PiCamera
 camera = PiCamera()
 camera.resolution = (320, 240)
 camera.framerate = 32
+camera.rotation = 180
 rawCapture = PiRGBArray(camera, size=(320, 240))
 
 time.sleep(0.1)
@@ -17,6 +18,8 @@ lower = np.array([50])
 upper = np.array([255])
 kernel = np.ones((5,5), np.uint8)
 
+filtered = None
+
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     image = frame.array
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -24,7 +27,6 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
     parameters = aruco.DetectorParameters_create()
     corners,ids,rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-    print(corners, ids)
 
     marker = aruco.drawDetectedMarkers(gray, corners)
 
@@ -36,12 +38,37 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     ret, thresh = cv2.threshold(mask, 255,255,255)
     contours,hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     res = cv2.bitwise_and(image, image, mask=mask)
+    
+    middle = -1
+    middles = []
+    if ids == None:
+        for cnt in contours:
+            x, y, w, h = cv2.boundingRect(cnt)
+            middles.append(x+w/2.0)
+
+    else:
+        for corner in corners[0][0]:
+            middles.append(corner[0])
+    
+    if (len(middles) > 0):
+        middle = sum(middles)/len(middles)
+    else :
+        middle = -1
+
+    
+    if filtered == None:
+        filtered = middle
+
+    # Exponential moving average filter
+    else:
+        filtered = 0.5*middle + 0.5*filtered
+
+
+    print("aruco ID:", ids, "middle:", int(middle), "filtered:", int(filtered))
     cv2.drawContours(res, contours, -1, (0,255,0), 3)
 
 
     cv2.imshow("Detected marker", marker)
-    cv2.imshow("Erode and dilate", erdil)
-    cv2.imshow("Mask", mask)
     cv2.imshow("Result", res)
 
     key = cv2.waitKey(1) & 0xFF
