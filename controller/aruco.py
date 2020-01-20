@@ -57,8 +57,9 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
     
     if filtered == None:
-        filtered= middle
+        filtered = middle
 
+    # Exponential moving average filter
     else:
         filtered = 0.5*middle + 0.5*filtered
 
