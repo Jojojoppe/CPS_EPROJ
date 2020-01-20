@@ -1,6 +1,9 @@
+import gopigo
 import random
-#import aruco
-from NetworkEmulator.netemuclient import NetEmuClient
+
+import controller.aruco as aruco
+import NetworkEmulator.netemuclient as netemuclient
+
 
 def recv(data:bytes, rssi:int):
     print(rssi, data)
@@ -13,7 +16,7 @@ def main():
     ip, port = "", 8080
     with open("server.ip") as f:
         ip = f.read()
-    network = NetEmuClient(recv, ip, port)
+    network = netemuclient.NetEmuClient(recv, ip, port)
     network.start()
     network.waitForMaze()
 
@@ -25,11 +28,12 @@ def main():
     while True:
         i=input()
         network.send(bytes(i, 'utf-8'))
+        print(aruco.get_result())
 
 if __name__ == "__main__":
     try:
         main()
         #gopigo.stop()
     except KeyboardInterrupt:
-        #gopigo.stop() 
-        pass
+        gopigo.stop()
+        aruco.stop_pls = True 
