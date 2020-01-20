@@ -1,7 +1,7 @@
-#import gopigo
+import gopigo
 import random
 
-#import controller.aruco as aruco
+import controller.aruco as aruco
 import NetworkEmulator.netemuclient as netemuclient
 
 """Data received from network
@@ -17,7 +17,7 @@ Returns tupe with:
 def newPosition(markerID:int):
     global network
     x = markerID&0x0f
-    y = (markerID/16)&0x0f
+    y = (markerID//16)&0x0f
     info = network.maze.getInfo((x, y))
     network.position(float(x), float(y))
     return info
@@ -31,10 +31,13 @@ def main():
     position = random.randint(0,15), random.randint(0,15)
     network = netemuclient.NetEmuClient.connect(recv, position)
 
+    sid = None
     while True:
-        i=input()
-        network.send(bytes(i, 'utf-8'))
-        # print(aruco.get_result())
+        res = aruco.get_result()
+        print(res)
+        if res[0]!=None and sid!=int(res[0]):
+            newPosition(int(res[0]))
+            sid = int(res[0])
 
 if __name__ == "__main__":
     try:

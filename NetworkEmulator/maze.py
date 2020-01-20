@@ -121,5 +121,5 @@ class Maze():
         final: True if exit of maze
     """
     def getInfo(self, pos):
-        c = self.grid(pos)
+        c = self.grid[pos]
         return c.north, c.east, c.south, c.west, c.final
