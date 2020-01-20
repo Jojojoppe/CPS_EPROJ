@@ -1,7 +1,7 @@
 #/bin/bash
 
-BOT1="130.89.82.44"
-#BOT2="130.89.86.154"
+BOT1="130.89.83.5"
+BOT2="130.89.82.44"
 #BOT3="130.89.80.215"
 
 SRC=$(pwd)/$1
@@ -9,5 +9,5 @@ DST=$2
 CMD=$3
 
 cat $SRC | ssh pi@$BOT1 "cat > "$DST "; "$CMD &
-#cat $SRC | ssh pi@$BOT2 "cat > "$DST "; "$CMD &
+cat $SRC | ssh pi@$BOT2 "cat > "$DST "; "$CMD &
 #cat $SRC | ssh pi@$BOT3 "cat > "$DST "; "$CMD &

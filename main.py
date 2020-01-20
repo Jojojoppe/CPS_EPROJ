@@ -1,22 +1,21 @@
 import gopigo
 import random
-
+import time
 import controller.aruco as aruco
 import NetworkEmulator.netemuclient as netemuclient
 
 
-# P controller
-# P_out = P0 + Kp * e
-# Per wheel assume that P0 is a constant for driving spesified in this file
+base_speed = 150
+kp = 100
 
 
-base_speed = 230
-kp = 55
+def get_control_out(p0):
+    # P controller
+    # P_out = P0 + Kp * e
+    # Per wheel assume that P0 is a constant for driving spesified in this file
 
-
-def get_control_out(target):
     global base_speed
-    error = target - 0.5 # Deviation from middle
+    error = p0 - 0.5 # Deviation from middle
     
     left  = base_speed + kp * error
     right = base_speed - kp * error
@@ -25,9 +24,10 @@ def get_control_out(target):
 
 def drive_forwards(target):
     left, right = get_control_out(target)
+    # print(target, "left", int(left),"right", int(right))
+
     gopigo.set_left_speed(int(left))
     gopigo.set_right_speed(int(right))
-    gopigo.fwd()
 
 
 """Data received from network
@@ -58,16 +58,43 @@ def main():
     # Receive the maze
     position = random.randint(0,15), random.randint(0,15)
     network = netemuclient.NetEmuClient.connect(recv, position)
+    gopigo.set_left_speed(0)
+    gopigo.set_right_speed(0)
+    gopigo.fwd()
+    prev_marker = -1
 
     lastID = None
     while True:
 
         # Read aruco marker and update position if neccessary
+        (marker, t) = aruco.get_result()
         res = aruco.get_result()
-        if res[0]!=None and lastID!=int(res[0]):
+        if merker!=None and lastID!=int(merker):
             # Update position
-            lastID = int(res[0])
+            lastID = int(marker)
             newPosition(lastID)
+
+
+        # Get the aruco id and the control base
+        print(t)
+        if marker != None: marker = int(marker)
+
+        if marker == None or marker == -1:
+            drive_forwards(t)
+
+        elif marker != prev_marker:
+            prev_marker = marker
+            print("stop", marker)
+            gopigo.set_left_speed(0)
+            gopigo.set_right_speed(0)
+            gopigo.stop()
+            time.sleep(1)
+            gopigo.fwd()
+        else:
+            drive_forwards(t)
+
+    main()
+
 
 
 if __name__ == "__main__":
@@ -77,3 +104,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         gopigo.stop()
         aruco.stop_pls = True 
+    except Exception:
+        main()
