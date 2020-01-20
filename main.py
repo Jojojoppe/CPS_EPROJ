@@ -17,6 +17,7 @@ def get_control_out(target):
     global base_speed
     error = target - 0.5 # Deviation from middle
     
+    # TODO maybe swap out the signs
     left  = base_speed + kp * error
     right = base_speed - kp * error
     return left, right

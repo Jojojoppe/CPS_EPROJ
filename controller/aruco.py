@@ -28,6 +28,15 @@ def get_result():
     return aruco_and_middle
 
 
+def concat(raw):
+    return raw / 320
+
+
+
+
+
+
+
 
 def main():
     global aruco_and_middle, stop_pls, filtered
@@ -75,7 +84,7 @@ def main():
             filtered = 0.5*middle + 0.5*filtered
 
         # TODO make the range [0, 1)
-        aruco_and_middle = (ids, filtered)
+        aruco_and_middle = (ids, concat(filtered))
 
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
@@ -101,5 +110,7 @@ atexit.register(stop_thread)
 if __name__ == "__main__":
     try:
         while not stop_pls: print(get_result())
+        while not stop_pls: pass
+
     except KeyboardInterrupt:
         stop_thread()
