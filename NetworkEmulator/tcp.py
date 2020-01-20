@@ -30,6 +30,9 @@ class TCPServer():
     def stop(self):
         self.sock.close()
 
+    def sendall(self, data):
+        self.sock.sendall(data)
+
     def send(self, data):
         self.sock.send(data)
 
@@ -75,6 +78,9 @@ class TCPClient():
 
     def send(self, data):
         self.sock.send(data)
+
+    def sendall(self, data):
+        self.sock.sendall(data)
 
     def recv(self, bufsize):
         return self.sock.recv(bufsize)

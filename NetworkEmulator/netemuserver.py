@@ -47,15 +47,17 @@ class ThreadConnection(threading.Thread):
 
         # Send the maze to the connected node
         m = Message.create(b'\x02\x00'+pickle.dumps(maze))
-        print(m.length)
-        self.socket.send(m.packet())
+        if config.get('logging', 'connection_status', fallback='false')=='true':
+            print("Sending maze")
+        nodes[self.node_idx].message_buffer.append(m.packet())
 
         while self.running:
 
             # Send data if possible
             for m in nodes[self.node_idx].message_buffer:
-                print("Send [%s]: %s"%(self.node_idx, m))
-                self.socket.send(m)
+                if config.get('logging', 'raw_message', fallback='false')=='true':
+                    print("Send [%s]: %s"%(self.node_idx, m))
+                self.socket.sendall(m)
             nodes[self.node_idx].message_buffer = []
 
             # Receive data

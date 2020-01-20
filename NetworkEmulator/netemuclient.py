@@ -3,7 +3,7 @@ import threading
 import random
 import pickle
 from message import Message
-from tcp import TCPClient
+from tcp import TCPClient, Timeout
 from maze import Maze, Cell
 
 class NetEmuClient(threading.Thread):
@@ -49,7 +49,7 @@ class NetEmuClient(threading.Thread):
                     # DATA received
                     rssi = struct.unpack('b', msg.data[1:2])[0]
                     self.recv_func(msg.data[2:], rssi)
-                elif msg.data[0]==2:
+                elif msg.data[0]==2 and self.maze==None:
                     # MAZE recieved
                     self.maze = pickle.loads(msg.data[2:])
                 else:
@@ -57,6 +57,7 @@ class NetEmuClient(threading.Thread):
                     pass
                 # ----------------
                 msg = None
+                buf = b''
 
     """Stop receiving thread
     """
@@ -68,7 +69,7 @@ class NetEmuClient(threading.Thread):
     def send(self, packet=b''):
         ddat = b'\x00\x00' + packet
         dmsg = Message.create(ddat)
-        self.client.send(dmsg.packet())
+        self.client.sendall(dmsg.packet())
 
     """Update position
     """
@@ -88,7 +89,7 @@ class NetEmuClient(threading.Thread):
     def _sendControl(self):
         cdat = b'\x01' + struct.pack('<ddd', self.tx, self.x, self.y)
         cmsg = Message.create(cdat)
-        self.client.send(cmsg.packet())
+        self.client.sendall(cmsg.packet())
 
     """Wait for maze to be received
     """
@@ -111,9 +112,9 @@ if __name__=="__main__":
 
     cl = NetEmuClient(recv, ip, 8080)
     cl.start()
-    #cl.waitForMaze()
-    #print("Maze received!")
-    #cl.maze.print_grid()
+    cl.waitForMaze()
+    print("Maze received:")
+    print(cl.maze)
 
     cl.position(x, y)
     cl.txpower(0.4)
