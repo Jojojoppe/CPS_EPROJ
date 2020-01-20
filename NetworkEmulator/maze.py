@@ -108,6 +108,13 @@ class Maze():
         f.write(pickle.dumps(self))
         f.close()
 
+    def dumps(self):
+        return pickle.dumps(self)
+
+    @classmethod
+    def loads(cls, data:bytes):
+        return pickle.loads(data)
+
 # if __name__=="__main__":
 #     m = Maze()
 #     m.generate()

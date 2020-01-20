@@ -46,7 +46,7 @@ class ThreadConnection(threading.Thread):
         msg = None
 
         # Send the maze to the connected node
-        m = Message.create(b'\x02\x00'+pickle.dumps(maze))
+        m = Message.create(b'\x02\x00'+maze.dumps())
         if config.get('logging', 'connection_status', fallback='false')=='true':
             print("Sending maze")
         nodes[self.node_idx].message_buffer.append(m.packet())
