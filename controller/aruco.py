@@ -74,10 +74,11 @@ def main():
         else:
             filtered = 0.5*middle + 0.5*filtered
 
+        # TODO make the range [0, 1)
         aruco_and_middle = (ids, filtered)
+
+
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
-
-
         cv2.imshow("Detected marker", marker)
         cv2.imshow("Result", res)
 
