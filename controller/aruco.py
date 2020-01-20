@@ -96,8 +96,6 @@ def main():
 
 
 
-
-
 def stop_thread(): stop_pls=True
 
 thread = T.Thread(target=main)
