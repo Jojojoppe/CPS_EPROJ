@@ -115,28 +115,11 @@ class Maze():
     def loads(cls, data:bytes):
         return pickle.loads(data)
 
-# if __name__=="__main__":
-#     m = Maze()
-#     m.generate()
-
-#     gs = 16
-#     offs = 16
-
-#     pygame.init()
-#     window = pygame.display.set_mode((2*offs+gs*m.width, 2*offs+gs*m.height), 0, 32)
-#     while True:
-#         window.fill((255, 255, 255))
-
-#         for w in range(m.width):
-#             for h in range(m.height):
-#                 if m.grid[(w,h)].west:
-#                     pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+w*gs, offs+(h+1)*gs), 1)
-#                 if m.grid[(w,h)].north:
-#                     pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+h*gs), (offs+(w+1)*gs, offs+h*gs), 1)
-#                 if m.grid[(w,h)].east:
-#                     pygame.draw.line(window, (0,0,0), (offs+(w+1)*gs, offs+h*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
-#                 if m.grid[(w,h)].south:
-#                     pygame.draw.line(window, (0,0,0), (offs+w*gs, offs+(h+1)*gs), (offs+(w+1)*gs, offs+(h+1)*gs), 1)
-        
-#         pygame.display.update()
-#     pygame.quit()
+    """Get info of position
+    Returns tupe with:
+        north, east, south, west: True if wall, False if open
+        final: True if exit of maze
+    """
+    def getInfo(self, pos):
+        c = self.grid[pos]
+        return c.north, c.east, c.south, c.west, c.final

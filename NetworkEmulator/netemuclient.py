@@ -101,5 +101,15 @@ class NetEmuClient(threading.Thread):
         while self.maze==None:
             pass
 
-def recv(packet=b'', rssi=0):
-    print(rssi, packet)
+    @classmethod
+    def connect(cls, recv, position):
+        ip, port = "", 8080
+        with open("server.ip") as f:
+            ip = f.read()
+        network = NetEmuClient(recv, ip, port)
+        network.start()
+        network.waitForMaze()
+
+        network.position(*position)
+        network.txpower(0.4)
+        return network

@@ -35,7 +35,7 @@ def main():
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
         image = frame.array
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
+        aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
         parameters = aruco.DetectorParameters_create()
         corners,ids,rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
