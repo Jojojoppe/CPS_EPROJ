@@ -56,6 +56,7 @@ def main():
     while True:
         # Get the aruco id and the control base
         (marker, t) = aruco.get_result()
+        print(t)
         if marker != None: marker = int(marker)
 
         if marker == None or marker == -1:
