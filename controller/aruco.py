@@ -83,6 +83,8 @@ def main():
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
 
+        print(aruco_and_middle)
+
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
         cv2.imshow("Marker", marker)

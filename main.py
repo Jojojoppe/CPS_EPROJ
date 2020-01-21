@@ -59,17 +59,36 @@ def newPosition(markerID:int):
 
 
 def get_turn(m):
-    m_info = newPosition(m)
-    # (north, east, south, west, final_pos)
-    # TODO Add algorithm decision making here
+    # m_info = newPosition(m)
+    # # (north, east, south, west, final_pos)
+    # # TODO Add algorithm decision making here
 
-    # For now find first open wall clockwise from north
-    dirs = ["straight", "right", "around", "left"]
-    for i in range(4):
-        if not m_info[i]:
-            return dirs[i]
+    # # For now find first open wall clockwise from north
+    # dirs = ["straight", "right", "around", "left"]
+    # for i in range(4):
+    #     if not m_info[i]:
+    #         return dirs[i]
 
-    return "straight"
+    # return "straight"
+    return "around"
+
+def around():
+    gopigo.set_left_speed(250)
+    gopigo.set_right_speed(250)
+    gopigo.left_rot()
+    time.sleep(1.65)
+    while True:
+        gopigo.stop()
+        time.sleep(0.2)
+        marker, t = aruco.get_result()
+        if t > 0.01:
+            break
+        gopigo.set_left_speed(250)
+        gopigo.set_right_speed(250)
+        gopigo.left_rot()
+
+        time.sleep(0.8)
+
 
 def do_turn(direction):
     gopigo.set_left_speed(250)
@@ -79,11 +98,8 @@ def do_turn(direction):
     if direction == "left":
         gopigo.turn_left_wait_for_completion(turn_angle)
     elif direction == "around":
-        gopigo.set_left_speed(250)
-        gopigo.set_right_speed(250)
-        gopigo.left_rot()
+        around()
 
-        time.sleep(1.80)
         gopigo.stop()
     else:
         gopigo.turn_right_wait_for_completion(turn_angle)
