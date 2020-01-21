@@ -6,6 +6,7 @@ import threading as T
 import atexit
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+import sys
 
 camera = PiCamera()
 x_res = 320
@@ -84,26 +85,25 @@ def main():
 
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
-        cv2.imshow("Detected marker", marker)
+        cv2.imshow("Marker", marker)
         cv2.imshow("Result", res)
 
         key = cv2.waitKey(1) & 0xFF
         rawCapture.truncate(0)
-        if key == ord("q") or stop_pls:
-            stop_pls = True
+        if key == ord("q"):
             break
 
 
-
-def stop_thread(): stop_pls=True
+def stop():
+    sys.exit("DIE")
 
 thread = T.Thread(target=main)
 thread.start()
-atexit.register(stop_thread)
+atexit.register(stop)
 
 if __name__ == "__main__":
     try:
         pass
 
     except KeyboardInterrupt:
-        stop_thread()
+        stop()

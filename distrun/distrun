@@ -10,5 +10,5 @@ DST=$2
 CMD=$3
 
 cat $SRC | ssh pi@$BOT1 "cat > "$DST "; "$CMD &
-cat $SRC | ssh pi@$BOT2 "cat > "$DST "; "$CMD &
+#cat $SRC | ssh pi@$BOT2 "cat > "$DST "; "$CMD &
 #cat $SRC | ssh pi@$BOT3 "cat > "$DST "; "$CMD &

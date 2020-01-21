@@ -7,9 +7,9 @@ import NetworkEmulator.netemuclient as netemuclient
 from enum import Enum
 
 
-base_speed = 130
-kp = 100
-turn_angle = 90
+base_speed = 150
+kp = 120
+turn_angle = 85
 
 
 def get_control_out(p0):
@@ -27,7 +27,6 @@ def get_control_out(p0):
 
 def drive_forwards(target):
     left, right = get_control_out(target)
-    # print(target, "left", int(left),"right", int(right))
     time.sleep(0.001)
     gopigo.set_left_speed(int(left))
     gopigo.set_right_speed(int(right))
@@ -61,7 +60,6 @@ def newPosition(markerID:int):
 
 def get_turn(m):
     m_info = newPosition(m)
-    print("Location info: ", m_info)
     # (north, east, south, west, final_pos)
     # TODO Add algorithm decision making here
 
@@ -69,18 +67,21 @@ def get_turn(m):
     dirs = ["straight", "right", "", "left"]
     for i in range(4):
         if not m_info[i]:
-            print("Go: ", dirs[i])
             return dirs[i]
 
     return "straight"
 
 def do_turn(direction):
+    gopigo.set_left_speed(250)
+    gopigo.set_right_speed(250)
     global turn_angle
     if direction == "left":
         gopigo.turn_left_wait_for_completion(turn_angle)
     else:
         gopigo.turn_right_wait_for_completion(turn_angle)
+    print("Turn done")
     gopigo.fwd()
+    drive_forwards(0.5)
 
 def turn_done():
 
@@ -114,6 +115,7 @@ def change_state(m, t):
         prev_marker = m
         if time.time() - 1 > state_timer:
             direction = get_turn(m)
+            print("dir:", direction)
             if direction == "left":
                 new_state = State.TURN_LEFT
             elif direction == "right":
@@ -136,7 +138,7 @@ def change_state(m, t):
             new_state = State.TURN_RIGHT
 
     if new_state != state:
-        print(new_state)
+        print(new_state, m)
         # TODO make better
         if state == State.STOP and new_state == State.DRIVE:
             gopigo.fwd()
@@ -182,6 +184,6 @@ if __name__ == "__main__":
         gopigo.stop()
     except KeyboardInterrupt:
         gopigo.stop()
-        aruco.stop_pls = True 
+        aruco.stop() 
     except Exception:
         main()
