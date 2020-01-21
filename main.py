@@ -44,12 +44,18 @@ Returns tupe with:
     final: True if exit of maze
 """
 def newPosition(markerID:int):
-    global network
-    x = markerID&0x0f
-    y = (markerID//16)&0x0f
-    info = network.maze.getInfo((x, y))
-    network.position(float(x), float(y))
-    return info
+    # global network
+    # x = markerID&0x0f
+    # y = (markerID//16)&0x0f
+    # info = network.maze.getInfo((x, y))
+    # network.position(float(x), float(y))
+    # return info
+    if markerID==3:
+        return (False, True, False, True, False)
+    elif markerID==4:
+        return (True, False, False, True, False)
+    else:
+        return (False, False, False, False, True)
 
 
 def get_turn(m):
