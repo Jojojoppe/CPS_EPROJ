@@ -45,11 +45,12 @@ Returns tupe with:
     final: True if exit of maze
 """
 def newPosition(markerID:int):
-    global network
+    global network, algoInstance
     x = markerID&0x0f
     y = (markerID//16)&0x0f
     info = network.maze.getInfo((x, y))
     network.position(float(x), float(y))
+    algoInstance.newPos((x, y), info)
     return info
 
 
@@ -63,7 +64,7 @@ def main():
     network = netemuclient.NetEmuClient.connect(recv, position)
 
     # Starup algorithm
-    algoInstance = algo.Algorithm(network)
+    algoInstance = algo.Algorithm(network, position)
 
     # gopigo.set_left_speed(0)
     # gopigo.set_right_speed(0)
@@ -72,7 +73,7 @@ def main():
 
     while True:
 
-        pass
+        algoInstance.step()
 
         # # Read aruco marker and update position if neccessary
         # (marker, t) = aruco.get_result()
