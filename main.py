@@ -3,9 +3,10 @@ import random
 import time
 import controller.aruco as aruco
 import NetworkEmulator.netemuclient as netemuclient
+from enum import Enum
 
 
-base_speed = 150
+base_speed = 130
 kp = 100
 
 
@@ -25,7 +26,7 @@ def get_control_out(p0):
 def drive_forwards(target):
     left, right = get_control_out(target)
     # print(target, "left", int(left),"right", int(right))
-
+    time.sleep(0.001)
     gopigo.set_left_speed(int(left))
     gopigo.set_right_speed(int(right))
 
@@ -50,14 +51,23 @@ def newPosition(markerID:int):
     return info
 
 
+class State(Enum):
+    DRIVE = 1
+    TURN_RIGHT = 2
+    TURN_LEFT = 3
+    STOP = 4
+
+state = State.DRIVE
+
 def main():
-    global network
+    global network, state
     # Setting up network emulator
     # Read server ip from server.ip
     # Connect to network emulator server
     # Receive the maze
-    position = random.randint(0,15), random.randint(0,15)
-    network = netemuclient.NetEmuClient.connect(recv, position)
+    # position = random.randint(0,15), random.randint(0,15)
+    # network = netemuclient.NetEmuClient.connect(recv, position)
+    time.sleep(2)
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
     gopigo.fwd()
@@ -68,15 +78,15 @@ def main():
 
         # Read aruco marker and update position if neccessary
         (marker, t) = aruco.get_result()
-        res = aruco.get_result()
-        if merker!=None and lastID!=int(merker):
-            # Update position
-            lastID = int(marker)
-            newPosition(lastID)
+        # res = aruco.get_result()
+        # if merker!=None and lastID!=int(merker):
+        #     # Update position
+        #     lastID = int(marker)
+        #     newPosition(lastID)
 
 
         # Get the aruco id and the control base
-        print(t)
+        # print(t)
         if marker != None: marker = int(marker)
 
         if marker == None or marker == -1:
