@@ -59,20 +59,30 @@ def newPosition(markerID:int):
 
 
 def get_turn(m):
-    return "right"
+    m_info = newPosition(m)
+    print("Location info: ", m_info)
+    # (north, east, south, west, final_pos)
+    # TODO Add algorithm decision making here
+
+    # For now find first open wall clockwise from north
+    dirs = ["straight", "right", "", "left"]
+    for i in range(4):
+        if not m_info[i]:
+            print("Go: ", dirs[i])
+            return dirs[i]
+
+    return "straight"
 
 def do_turn(direction):
     if direction == "left":
-        pass
-
-
+        gopigo.turn_left_wait_for_completion(80)
     else:
-        pass
-
+        gopigo.turn_right_wait_for_completion(80)
+    gopigo.fwd()
 
 def turn_done():
 
-    return False
+    return True
 
 
 
@@ -99,6 +109,7 @@ def change_state(m, t):
             new_state = State.DRIVE
 
     elif state == State.STOP:
+        prev_marker = m
         if time.time() - 1 > state_timer:
             direction = get_turn(m)
             if direction == "left":
@@ -123,6 +134,10 @@ def change_state(m, t):
             new_state = State.TURN_RIGHT
 
     if new_state != state:
+        print(new_state)
+        # TODO make better
+        if state == State.STOP and new_state == State.DRIVE:
+            gopigo.fwd()
         state_timer = time.time()
 
     return new_state
@@ -132,44 +147,31 @@ def main():
     global network, state, prev_marker
     # position = random.randint(0,15), random.randint(0,15)
     # network = netemuclient.NetEmuClient.connect(recv, position)
-    time.sleep(2)
+    time.sleep(1)
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
     gopigo.fwd()
-    prev_marker = -1
-
-    lastID = None
+    
+    print(state)
     while True:
 
-        # Read aruco marker and update position if neccessary
         (marker, t) = aruco.get_result()
-        # res = aruco.get_result()
-        # if merker!=None and lastID!=int(merker):
-        #     # Update position
-        #     lastID = int(marker)
-        #     newPosition(lastID)
+        state = change_state(marker, t)
 
-
-        # Get the aruco id and the control base
-        # print(t)
-        if marker != None: marker = int(marker)
-
-        if marker == None or marker == -1:
+        if state == State.DRIVE:
             drive_forwards(t)
 
-        elif marker != prev_marker:
-            prev_marker = marker
-            print("stop", marker)
-            gopigo.set_left_speed(0)
-            gopigo.set_right_speed(0)
+        elif state == State.STOP:
             gopigo.stop()
-            time.sleep(1)
-            gopigo.fwd()
+
+        elif state == State.TURN_LEFT:
+            do_turn("left")
+
+        elif state == State.TURN_RIGHT:
+            do_turn("right")
+
         else:
-            drive_forwards(t)
-
-    main()
-
+            raise ValueError
 
 
 if __name__ == "__main__":
