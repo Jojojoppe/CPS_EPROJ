@@ -51,11 +51,11 @@ def newPosition(markerID:int):
     # network.position(float(x), float(y))
     # return info
     if markerID==3:
-        return (True, False, False, True, False)
+        return (True, True, False, True, False)
     elif markerID==4:
-        return (True, False, False, True, False)
+        return (True, True, False, True, False)
     else:
-        return (False, False, False, False, True)
+        return (False, True, False, True, False)
 
 
 def get_turn(m):
@@ -64,7 +64,7 @@ def get_turn(m):
     # TODO Add algorithm decision making here
 
     # For now find first open wall clockwise from north
-    dirs = ["straight", "right", "", "left"]
+    dirs = ["straight", "right", "around", "left"]
     for i in range(4):
         if not m_info[i]:
             return dirs[i]
@@ -78,6 +78,13 @@ def do_turn(direction):
     time.sleep(0.1)
     if direction == "left":
         gopigo.turn_left_wait_for_completion(turn_angle)
+    elif direction == "around":
+        gopigo.set_left_speed(250)
+        gopigo.set_right_speed(250)
+        gopigo.left_rot()
+
+        time.sleep(1.80)
+        gopigo.stop()
     else:
         gopigo.turn_right_wait_for_completion(turn_angle)
     print("Turn done")
@@ -96,6 +103,7 @@ class State(Enum):
     TURN_RIGHT = 2
     TURN_LEFT = 3
     STOP = 4
+    TURN_AROUND = 5
 
 state = State.DRIVE
 state_timer = time.time()
@@ -122,6 +130,8 @@ def change_state(m, t):
                 new_state = State.TURN_LEFT
             elif direction == "right":
                 new_state = State.TURN_RIGHT
+            elif direction == "around":
+                new_state = State.TURN_AROUND
             else: 
                 new_state = State.DRIVE
         else:
@@ -138,6 +148,12 @@ def change_state(m, t):
             new_state = State.DRIVE
         else:
             new_state = State.TURN_RIGHT
+
+    elif state == State.TURN_AROUND:
+        if turn_done():
+            new_state = State.DRIVE
+        else:
+            new_state = State.TURN_AROUND
 
     if new_state != state:
         print(new_state, m)
@@ -176,7 +192,9 @@ def main():
 
         elif state == State.TURN_RIGHT:
             do_turn("right")
-
+        elif state == State.TURN_AROUND:
+            do_turn("around")
+            time.sleep(0.001)
         else:
             raise ValueError
 
