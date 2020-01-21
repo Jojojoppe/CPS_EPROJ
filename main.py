@@ -69,11 +69,12 @@ def main():
         (marker, t) = aruco.get_result()
 
         # Get the aruco id and the control base
-        print(t)
+        #print(t)
         if marker != None: marker = int(marker)
 
         if marker == None or marker == -1:
             drive_forwards(t)
+            pass
 
         elif marker != prev_marker:
             prev_marker = marker
@@ -82,12 +83,14 @@ def main():
             gopigo.set_right_speed(0)
             gopigo.stop()
 
-            (north, east, west, south), final = newPosition(marker)
+            posinfo = newPosition(marker)
+            print(posinfo)
 
             time.sleep(1)
             gopigo.fwd()
         else:
             drive_forwards(t)
+            pass
 
     main()
 
