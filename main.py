@@ -9,6 +9,7 @@ from enum import Enum
 
 base_speed = 130
 kp = 100
+turn_angle = 90
 
 
 def get_control_out(p0):
@@ -51,7 +52,7 @@ def newPosition(markerID:int):
     # network.position(float(x), float(y))
     # return info
     if markerID==3:
-        return (False, True, False, True, False)
+        return (True, False, False, True, False)
     elif markerID==4:
         return (True, False, False, True, False)
     else:
@@ -74,10 +75,11 @@ def get_turn(m):
     return "straight"
 
 def do_turn(direction):
+    global turn_angle
     if direction == "left":
-        gopigo.turn_left_wait_for_completion(80)
+        gopigo.turn_left_wait_for_completion(turn_angle)
     else:
-        gopigo.turn_right_wait_for_completion(80)
+        gopigo.turn_right_wait_for_completion(turn_angle)
     gopigo.fwd()
 
 def turn_done():
