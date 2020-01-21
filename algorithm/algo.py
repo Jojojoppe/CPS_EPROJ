@@ -2,21 +2,25 @@ import enum
 import random
 #from NetworkEmulator.netemuclient import NetEmuClient
 
-class AbsoluteDirection(enum.Enum):
-    NORTH = 0
-    EAST = 1
-    SOUTH = 2
-    WEST = 3
+NORTH = 0
+EAST = 1
+SOUTH = 2
+WEST = 3
 
-class RelativeDirection(enum.Enum):
-    STRAIGHT = 0
-    RIGHT = 1
-    BACK = 2
-    LEFT = 3
+STRAIGHT = 0
+RIGHT = 1
+BACK = 2
+LEFT = 3
 
 """Algorithm class
 """
 class Algorithm():
+
+    class SolvingStates(enum.Enum):
+        EXPLORE = 0
+        GOTOMEETINGPOINT = 1
+        GOTOOPENPATH = 2
+
     """ Init function
     """
     def __init__(self, network, position):
@@ -26,12 +30,18 @@ class Algorithm():
         self.position = position
         self.prevPosition = None
         self.positionInfo = (False, False, False, False, False)
-        self.facingDirection = AbsoluteDirection.NORTH
+        self.facingDirection = NORTH
+
+        # Algo parameters
+        self.amountInSwarm = 2
 
         # Map memory
         self.mazeMemory = {}
         # Route to self map
         self.routeToSelf = {}
+
+        # Solving state
+        self.solvingState = self.SolvingStates.EXPLORE
 
     """ Called when message is received
     """
@@ -63,29 +73,60 @@ class Algorithm():
     Returns string: left right straight back (RELATIVE)
     """
     def getDirection(self):
-        # Return random possible direction
-        possible = []
-        for i in range(4):
-            if not self.positionInfo[i]:
-                possible.append(i)
-        newdir = self.Abs2Rel(possible[random.randint(0, len(possible)-1)])
-        self.facingDirection = newdir
-        return newdir
+
+        if self.solvingState == self.SolvingStates.EXPLORE:
+            occupied = False        # TODO different source
+            # i is relative direction: first look if I can drive straight ahead
+            for i in range(4):
+                d = self.Rel2Abs(i)
+                # If no wall in direction, if not occupied, and not aleady visited
+                if not self.positionInfo[d] and not occupied and self.getNextPosition(d) not in self.mazeMemory:
+                    self.facingDirection = d
+                    return i
+
+            # No possible direction
+            self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
+
+        if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
+            pass
+
+        elif self.solvingState == self.SolvingStates.GOTOOPENPATH:
+            pass
+
+        else:
+            raise ValueError
 
     """ Convert absolute direction to relative
     Returns relative direction
     """
-    def Abs2Rel(self, newdir:AbsoluteDirection):
+    def Abs2Rel(self, newdir):
         return (newdir-self.facingDirection)%4
 
     """Convert relative direction to absolute
     Returns absolute direction
     """
-    def Rel2Abs(self, newdir:RelativeDirection):
+    def Rel2Abs(self, newdir):
         return (newdir+self.facingDirection)%4
+
+    """ Get next position in a certain direction
+    """
+    def getNextPosition(self, newDir):
+        x, y = self.position
+        if newDir == NORTH:
+            return x,y-1
+        elif newDir == EAST:
+            return x+1,y
+        elif newDir == SOUTH:
+            return x,y+1
+        elif newDir == WEST:
+            return x-1, y
+        else:
+            raise ValueError
 
 if __name__ == "__main__":
     pass
 
 # Notes:
 # initial prevPosition may be None if bot starts on a position and NOT outside the maze
+# Assumption for now: starting next to eachother and 2 bots in swarm
+# 0,0 is left upper corner (like in images)

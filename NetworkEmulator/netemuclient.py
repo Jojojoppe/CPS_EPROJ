@@ -23,6 +23,8 @@ class NetEmuClient(threading.Thread):
         self.client = TCPClient(ip, port)
         self.client.start()
         self._sendControl()
+        self.ip = ip
+        self.port = port
 
     """Run receiving thread
     """
