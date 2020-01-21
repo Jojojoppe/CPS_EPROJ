@@ -1,5 +1,6 @@
 import enum
 import random
+import sys
 #from NetworkEmulator.netemuclient import NetEmuClient
 
 NORTH = 0
@@ -31,6 +32,7 @@ class Algorithm():
         self.prevPosition = None
         self.positionInfo = (False, False, False, False, False)
         self.facingDirection = NORTH
+        self.meetingPoint = position
 
         # Algo parameters
         self.amountInSwarm = 2
@@ -88,7 +90,27 @@ class Algorithm():
             self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
         if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-            pass
+            # FIXME calculation of routeFromMeetingPoint may be done once ??
+            pt = self.meetingPoint
+            routeFromMeetingPoint = [pt]
+            while True:
+                if pt == self.position:
+                    break
+
+                # Search for all keys with PT
+                for key, value in self.routeToSelf.items():
+                    # Key (A,B)
+                    if (pt==key[0] or pt==key[1]) and value!=pt:
+                        # If outward pointing edge
+                        routeFromMeetingPoint.append(value)
+                        pt = value
+                        break;
+            # Found route from meeting point to me
+            nextPos = routeFromMeetingPoint[-2]
+            # Next position is routeToMeetingPoint[1]
+            newdir = self.getNextDirection(nextPos)
+            self.facingDirection = newdir
+            return self.Abs2Rel(newdir)
 
         elif self.solvingState == self.SolvingStates.GOTOOPENPATH:
             pass
@@ -109,6 +131,7 @@ class Algorithm():
         return (newdir+self.facingDirection)%4
 
     """ Get next position in a certain direction
+    Dir->Pos
     """
     def getNextPosition(self, newDir):
         x, y = self.position
@@ -120,6 +143,23 @@ class Algorithm():
             return x,y+1
         elif newDir == WEST:
             return x-1, y
+        else:
+            raise ValueError
+
+    """ Get next direction
+    Pos->Dir
+    """
+    def getNextDirection(self, newPos):
+        nx,ny = newPos
+        x,y = self.position
+        if nx==x and ny==y-1:
+            return NORTH
+        elif nx==x+1 and ny==y:
+            return EAST
+        elif nx==x and ny==y+1:
+            return SOUTH
+        elif nx==x-1 and ny==y:
+            return WEST
         else:
             raise ValueError
 

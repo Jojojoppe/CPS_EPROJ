@@ -40,16 +40,13 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.1)
+        time.sleep(0.02)
         counter += 1
         if counter == 10:
             counter = 0
             algoInstance.getDirection()
             x,y = algoInstance.getNextPosition(algoInstance.facingDirection)
             newPosition(x,y)
-            print()
-            print(algoInstance.mazeMemory)
-            print(algoInstance.routeToSelf)
 
 if __name__ == "__main__":
     main()
