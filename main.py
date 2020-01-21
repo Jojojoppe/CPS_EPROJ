@@ -2,6 +2,7 @@ import gopigo
 import random
 import time
 import controller.aruco as aruco
+import controller.space as space
 import NetworkEmulator.netemuclient as netemuclient
 from enum import Enum
 
@@ -51,6 +52,24 @@ def newPosition(markerID:int):
     return info
 
 
+def get_turn(m):
+    return "right"
+
+def do_turn(direction):
+    if direction == "left":
+        pass
+
+
+    else:
+        pass
+
+
+def turn_done():
+
+    return False
+
+
+
 class State(Enum):
     DRIVE = 1
     TURN_RIGHT = 2
@@ -58,13 +77,53 @@ class State(Enum):
     STOP = 4
 
 state = State.DRIVE
+state_timer = time.time()
+prev_marker = -1
+
+def change_state(m, t):
+    global state, prev_marker, state_timer
+    new_state = State.STOP
+
+    if state == State.DRIVE:
+        if m == None or m == -1:
+            new_state = State.DRIVE
+        elif m >= 0 and m != prev_marker:
+            new_state = State.STOP
+        else:
+            new_state = State.DRIVE
+
+    elif state == State.STOP:
+        if time.time() - 1 > state_timer:
+            direction = get_turn(m)
+            if direction == "left":
+                new_state = State.TURN_LEFT
+            elif direction == "right":
+                new_state = State.TURN_RIGHT
+            else: 
+                new_state = State.DRIVE
+        else:
+            new_state = State.STOP
+
+    elif state == State.TURN_LEFT:
+        if turn_done():
+            new_state = State.DRIVE
+        else:
+            new_state = State.TURN_LEFT
+
+    elif state == State.TURN_RIGHT:
+        if turn_done():
+            new_state = State.DRIVE
+        else:
+            new_state = State.TURN_RIGHT
+
+    if new_state != state:
+        state_timer = time.time()
+
+    return new_state
+
 
 def main():
-    global network, state
-    # Setting up network emulator
-    # Read server ip from server.ip
-    # Connect to network emulator server
-    # Receive the maze
+    global network, state, prev_marker
     # position = random.randint(0,15), random.randint(0,15)
     # network = netemuclient.NetEmuClient.connect(recv, position)
     time.sleep(2)
