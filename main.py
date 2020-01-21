@@ -63,17 +63,10 @@ def main():
     gopigo.fwd()
     prev_marker = -1
 
-    lastID = None
     while True:
 
         # Read aruco marker and update position if neccessary
         (marker, t) = aruco.get_result()
-        res = aruco.get_result()
-        if merker!=None and lastID!=int(merker):
-            # Update position
-            lastID = int(marker)
-            newPosition(lastID)
-
 
         # Get the aruco id and the control base
         print(t)
@@ -88,6 +81,9 @@ def main():
             gopigo.set_left_speed(0)
             gopigo.set_right_speed(0)
             gopigo.stop()
+
+            (north, east, west, south), final = newPosition(marker)
+
             time.sleep(1)
             gopigo.fwd()
         else:
