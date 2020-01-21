@@ -95,7 +95,7 @@ def main():
 
 
 def stop():
-    sys.exit("DIE")
+    raise SystemExit(0)
 
 thread = T.Thread(target=main)
 thread.start()

@@ -75,11 +75,13 @@ def do_turn(direction):
     gopigo.set_left_speed(250)
     gopigo.set_right_speed(250)
     global turn_angle
+    time.sleep(0.1)
     if direction == "left":
         gopigo.turn_left_wait_for_completion(turn_angle)
     else:
         gopigo.turn_right_wait_for_completion(turn_angle)
     print("Turn done")
+    time.sleep(0.1)
     gopigo.fwd()
     drive_forwards(0.5)
 
