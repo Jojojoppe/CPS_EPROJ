@@ -2,11 +2,14 @@ import gopigo
 import random
 import time
 import controller.aruco as aruco
+import controller.space as space
 import NetworkEmulator.netemuclient as netemuclient
+from enum import Enum
 
 
 base_speed = 150
-kp = 100
+kp = 120
+turn_angle = 85
 
 
 def get_control_out(p0):
@@ -24,8 +27,7 @@ def get_control_out(p0):
 
 def drive_forwards(target):
     left, right = get_control_out(target)
-    # print(target, "left", int(left),"right", int(right))
-
+    time.sleep(0.001)
     gopigo.set_left_speed(int(left))
     gopigo.set_right_speed(int(right))
 
@@ -42,58 +44,139 @@ Returns tupe with:
     final: True if exit of maze
 """
 def newPosition(markerID:int):
-    global network
-    x = markerID&0x0f
-    y = (markerID//16)&0x0f
-    info = network.maze.getInfo((x, y))
-    network.position(float(x), float(y))
-    return info
+    # global network
+    # x = markerID&0x0f
+    # y = (markerID//16)&0x0f
+    # info = network.maze.getInfo((x, y))
+    # network.position(float(x), float(y))
+    # return info
+    if markerID==3:
+        return (True, False, False, True, False)
+    elif markerID==4:
+        return (True, False, False, True, False)
+    else:
+        return (False, False, False, False, True)
+
+
+def get_turn(m):
+    m_info = newPosition(m)
+    # (north, east, south, west, final_pos)
+    # TODO Add algorithm decision making here
+
+    # For now find first open wall clockwise from north
+    dirs = ["straight", "right", "", "left"]
+    for i in range(4):
+        if not m_info[i]:
+            return dirs[i]
+
+    return "straight"
+
+def do_turn(direction):
+    gopigo.set_left_speed(250)
+    gopigo.set_right_speed(250)
+    global turn_angle
+    if direction == "left":
+        gopigo.turn_left_wait_for_completion(turn_angle)
+    else:
+        gopigo.turn_right_wait_for_completion(turn_angle)
+    print("Turn done")
+    gopigo.fwd()
+    drive_forwards(0.5)
+
+def turn_done():
+
+    return True
+
+
+
+class State(Enum):
+    DRIVE = 1
+    TURN_RIGHT = 2
+    TURN_LEFT = 3
+    STOP = 4
+
+state = State.DRIVE
+state_timer = time.time()
+prev_marker = -1
+
+def change_state(m, t):
+    global state, prev_marker, state_timer
+    new_state = State.STOP
+
+    if state == State.DRIVE:
+        if m == None or m == -1:
+            new_state = State.DRIVE
+        elif m >= 0 and m != prev_marker:
+            new_state = State.STOP
+        else:
+            new_state = State.DRIVE
+
+    elif state == State.STOP:
+        prev_marker = m
+        if time.time() - 1 > state_timer:
+            direction = get_turn(m)
+            print("dir:", direction)
+            if direction == "left":
+                new_state = State.TURN_LEFT
+            elif direction == "right":
+                new_state = State.TURN_RIGHT
+            else: 
+                new_state = State.DRIVE
+        else:
+            new_state = State.STOP
+
+    elif state == State.TURN_LEFT:
+        if turn_done():
+            new_state = State.DRIVE
+        else:
+            new_state = State.TURN_LEFT
+
+    elif state == State.TURN_RIGHT:
+        if turn_done():
+            new_state = State.DRIVE
+        else:
+            new_state = State.TURN_RIGHT
+
+    if new_state != state:
+        print(new_state, m)
+        # TODO make better
+        if state == State.STOP and new_state == State.DRIVE:
+            gopigo.fwd()
+        state_timer = time.time()
+
+    return new_state
 
 
 def main():
-    global network
-    # Setting up network emulator
-    # Read server ip from server.ip
-    # Connect to network emulator server
-    # Receive the maze
-    position = random.randint(0,15), random.randint(0,15)
-    network = netemuclient.NetEmuClient.connect(recv, position)
+    global network, state, prev_marker
+    # position = random.randint(0,15), random.randint(0,15)
+    # network = netemuclient.NetEmuClient.connect(recv, position)
+    time.sleep(1)
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
     gopigo.fwd()
-    prev_marker = -1
-
+    
+    print(state)
     while True:
 
-        # Read aruco marker and update position if neccessary
         (marker, t) = aruco.get_result()
+        state = change_state(marker, t)
 
-        # Get the aruco id and the control base
-        #print(t)
-        if marker != None: marker = int(marker)
-
-        if marker == None or marker == -1:
+        if state == State.DRIVE:
             drive_forwards(t)
             pass
 
-        elif marker != prev_marker:
-            prev_marker = marker
-            print("stop", marker)
-            gopigo.set_left_speed(0)
-            gopigo.set_right_speed(0)
+        elif state == State.STOP:
             gopigo.stop()
 
-            posinfo = newPosition(marker)
-            print(posinfo)
+        elif state == State.TURN_LEFT:
+            do_turn("left")
 
-            time.sleep(1)
-            gopigo.fwd()
+        elif state == State.TURN_RIGHT:
+            do_turn("right")
+
         else:
-            drive_forwards(t)
-            pass
-
-    main()
-
+            raise ValueError
 
 
 if __name__ == "__main__":
@@ -102,6 +185,6 @@ if __name__ == "__main__":
         gopigo.stop()
     except KeyboardInterrupt:
         gopigo.stop()
-        aruco.stop_pls = True 
+        aruco.stop() 
     except Exception:
         main()
