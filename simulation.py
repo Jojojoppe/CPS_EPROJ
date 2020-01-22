@@ -7,7 +7,6 @@ import algorithm.algo as algo
 """
 def recv(data:bytes, rssi:int):
     global algoInstance
-    print(rssi, data)
     algoInstance.recv(data, rssi)
 
 
@@ -30,8 +29,9 @@ def main():
     # Read server ip from server.ip
     # Connect to network emulator server
     # Receive the maze
-    x,y = 0, 0
+    x,y = 7, 0
     network = netemuclient.NetEmuClient.connect(recv, (x,y))
+    network.txpower(0.02)
 
     # Starup algorithm
     algoInstance = algo.Algorithm(network, (x,y))
@@ -40,7 +40,8 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.005)
+        time.sleep(0.1)
+        #input()
         counter += 1
         if counter == 10:
             counter = 0

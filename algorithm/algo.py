@@ -1,6 +1,7 @@
 import enum
 import random
 import sys
+import pickle
 #from NetworkEmulator.netemuclient import NetEmuClient
 
 NORTH = 0
@@ -48,15 +49,80 @@ class Algorithm():
         # Solving state
         self.solvingState = self.SolvingStates.EXPLORE
 
+        # Timer counter
+        self.counter = 0
+
+        # Update buffers
+        self.updateMazeMemory = []
+        self.updateRouteToSelf = []
+
     """ Called when message is received
+    Updates internal memory without changing it: pushes to internal buffer which is resolved by step()
     """
     def recv(self, data:bytes, rssi:int):
-        pass
+        msgData = pickle.loads(data)
+        otherMazeMemory = msgData[0]
+        otherRouteToSelf = msgData[1]
+        otherUnexploredJunctions = msgData[2]
+        otherPosition = msgData[3]
+
+        # Update maze memory
+        for k,v in otherMazeMemory.items():
+            if k not in self.mazeMemory:
+                self.updateMazeMemory.append((k,v))
+
+        # Update route to self
+        # for k,v in otherRouteToSelf.items():
+        #     if k not in self.routeToSelf:
+        #         self.updateRouteToSelf.append((k,v))
+        # FIXME self.meetingpoint? Not the same as mine?
+        route = self.getPathFromPointToPoint(otherRouteToSelf, self.meetingPoint, otherPosition)
+        print()
+        print(route)
+        uniqueRoute = []
+        notUniqueRoute = []
+        # Delete points we already know
+        for p in route:
+            if p not in self.routeToSelf and p!=self.position:
+                uniqueRoute.append(p)
+            else:
+                notUniqueRoute.append(p)
+        print(uniqueRoute)
+        print(notUniqueRoute)
+        if len(uniqueRoute)>0:
+            for i in range(len(uniqueRoute)-1):
+                p = uniqueRoute[-1*i-1]
+                np = uniqueRoute[-1*i-2]
+                self.updateRouteToSelf.append((p, np))
+            p = uniqueRoute[0]
+            np = notUniqueRoute[-1]
+            self.updateRouteToSelf.append((p, np))
+            print(self.updateRouteToSelf)
+
+    """[summary]
+    """
+    def updateFromBuffers(self):
+        # Update maze memory from buffer
+        for upd in self.updateMazeMemory:
+            self.mazeMemory[upd[0]] = upd[1]
+        self.updateMazeMemory.clear()
+        # Update route to self from buffer
+        for upd in self.updateRouteToSelf:
+            self.routeToSelf[upd[0]] = upd[1]
+        self.updateRouteToSelf.clear()
 
     """ Called in main loop
     """
     def step(self):
-        pass
+        self.counter += 1
+
+        self.updateFromBuffers()
+
+        # Broadcast maze, routeToSeld and unexploredJunction
+        if self.counter%5==0:
+            self.network.send(pickle.dumps(
+                [self.mazeMemory, self.routeToSelf, self.unexploredJunctions, self.position]
+            ))
 
     """ Called when aruco marker is detected
     position: (x,y)
@@ -185,10 +251,7 @@ class Algorithm():
     """
     def getNextDirectionToPoint(self, pt):
         routeFromPoint = [pt]
-        while True:
-            if pt == self.position:
-                break
-
+        while pt!=self.position:
             if pt in self.routeToSelf:
                 routeFromPoint.append(self.routeToSelf[pt])
                 pt = self.routeToSelf[pt]
@@ -203,6 +266,22 @@ class Algorithm():
             # Next position is routeToMeetingPoint[1]
             newdir = self.getNextDirection(nextPos)
             return newdir
+
+    """ Get path from position to a specific known point in
+    the maze.
+    Gets this info from routeToSelf
+    pt's: (x,y)
+    Returns: route from point to point
+    """
+    def getPathFromPointToPoint(self, routeToSelf, ptFrom, ptTo):
+        pt = ptFrom
+        routeFromPoint = [ptFrom]
+        while pt!=ptTo:
+            if pt in routeToSelf:
+                routeFromPoint.append(routeToSelf[pt])
+                pt = routeToSelf[pt]
+
+        return routeFromPoint
 
 if __name__ == "__main__":
     pass
