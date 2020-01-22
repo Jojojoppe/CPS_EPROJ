@@ -2,6 +2,7 @@ import enum
 import random
 import sys
 import pickle
+import time
 #from NetworkEmulator.netemuclient import NetEmuClient
 
 NORTH = 0
@@ -55,11 +56,14 @@ class Algorithm():
         # Update buffers
         self.updateMazeMemory = []
         self.updateRouteToSelf = []
+        self.updateUnexploredJunctions = []
+        self.mayUpdate = False
 
     """ Called when message is received
     Updates internal memory without changing it: pushes to internal buffer which is resolved by step()
     """
     def recv(self, data:bytes, rssi:int):
+        self.mayUpdate = False
         msgData = pickle.loads(data)
         otherMazeMemory = msgData[0]
         otherRouteToSelf = msgData[1]
@@ -99,9 +103,23 @@ class Algorithm():
             self.updateRouteToSelf.append((p, np))
             print(self.updateRouteToSelf)
 
+        # Update unexploredJunctions
+        for k,v in otherUnexploredJunctions.items():
+            # If new junction
+            if k not in self.unexploredJunctions:
+                self.updateUnexploredJunctions.append((k,v))
+            # If known junction of other bot is explored
+            elif v and not self.unexploredJunctions[k]:
+                self.updateUnexploredJunctions.append((k,v))
+        
+        self.mayUpdate = True
+
     """[summary]
     """
     def updateFromBuffers(self):
+        if not self.mayUpdate:
+            return
+        self.mayUpdate = False
         # Update maze memory from buffer
         for upd in self.updateMazeMemory:
             self.mazeMemory[upd[0]] = upd[1]
@@ -110,6 +128,10 @@ class Algorithm():
         for upd in self.updateRouteToSelf:
             self.routeToSelf[upd[0]] = upd[1]
         self.updateRouteToSelf.clear()
+        # Update unexplored junctions
+        for upd in self.updateUnexploredJunctions:
+            self.unexploredJunctions[upd[0]] = upd[1]
+        self.updateUnexploredJunctions.clear()
 
     """ Called in main loop
     """
@@ -145,6 +167,8 @@ class Algorithm():
     def getDirection(self):
         while True:
             if self.solvingState == self.SolvingStates.EXPLORE:
+                print("EXPLORE")
+                self.updateFromBuffers()
                 occupied = False        # TODO different source
                 newDirection = None
                 if self.position in self.unexploredJunctions:
@@ -168,24 +192,29 @@ class Algorithm():
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-                    newdir = self.getNextDirectionToPoint(self.meetingPoint)
-                    if newdir == None:
-                        self.solvingState = self.SolvingStates.GOTOOPENPATH
-                    else:
-                        self.facingDirection = newdir
-                        return self.Abs2Rel(newdir)
+                print("GOTOMEETINGPOINT")
+                newdir = self.getNextDirectionToPoint(self.meetingPoint)
+                if newdir == None:
+                    self.solvingState = self.SolvingStates.GOTOOPENPATH
+                else:
+                    self.facingDirection = newdir
+                    return self.Abs2Rel(newdir)
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
+                print("GOTOOPENPATH")
+                self.updateFromBuffers()
                 # Calculate target junction
                 # -> First junction with unexplored open paths
                 for jPt, jExplored in self.unexploredJunctions.items():
                     if not jExplored:
                         self.targetJunction = jPt
                         break
+                print(self.targetJunction)
                 if self.targetJunction == None:
                     # No unexplored junctions
                     # FIXME
-                    sys.exit(0)
+                    print("NO UNEXPLORED JUNCTIONS")
+                print(self.routeToSelf)
                 newdir = self.getNextDirectionToPoint(self.targetJunction)
                 if newdir == None:
                     # TODO ???
@@ -195,6 +224,7 @@ class Algorithm():
                 else:
                     self.facingDirection = newdir
                     return self.Abs2Rel(newdir)
+            time.sleep(0)
 
  
 

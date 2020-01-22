@@ -29,9 +29,9 @@ def main():
     # Read server ip from server.ip
     # Connect to network emulator server
     # Receive the maze
-    x,y = 7, 0
+    x,y = 4, 0
     network = netemuclient.NetEmuClient.connect(recv, (x,y))
-    network.txpower(0.02)
+    network.txpower(0.50)
 
     # Starup algorithm
     algoInstance = algo.Algorithm(network, (x,y))
@@ -40,8 +40,7 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.1)
-        #input()
+        time.sleep(0.05)
         counter += 1
         if counter == 10:
             counter = 0
