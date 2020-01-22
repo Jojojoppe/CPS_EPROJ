@@ -41,6 +41,9 @@ class Algorithm():
         self.mazeMemory = {}
         # Route to self map
         self.routeToSelf = {}
+        # Open paths (not yet explored)
+        self.unexploredJunctions = {}     # [pt] = (bool explored)
+        self.targetJunction = None
 
         # Solving state
         self.solvingState = self.SolvingStates.EXPLORE
@@ -67,56 +70,67 @@ class Algorithm():
         # Update route to self map
         # Every EDGE (between two points) needs data. problem: 1->2 and 2->1 are same
         # edge, so just adding both combinations to dict will always update the edge
-        self.routeToSelf[(self.prevPosition, self.position)] = self.position
-        self.routeToSelf[(self.position, self.prevPosition)] = self.position
+        self.routeToSelf[self.prevPosition] = self.position
         
 
     """ Called when new direction is needed
     Returns string: left right straight back (RELATIVE)
     """
     def getDirection(self):
+        while True:
+            if self.solvingState == self.SolvingStates.EXPLORE:
+                occupied = False        # TODO different source
+                newDirection = None
+                if self.position in self.unexploredJunctions:
+                    self.unexploredJunctions[self.position] = True
+                # i is relative direction: first look if I can drive straight ahead
+                for i in range(4):
+                    d = self.Rel2Abs(i)
+                    # If no wall in direction, if not occupied, and not aleady visited
+                    if not self.positionInfo[d] and not occupied and self.getNextPosition(d) not in self.mazeMemory:
+                        if newDirection==None:
+                            newDirection = i
+                            self.facingDirection = d
+                        else:
+                            # There are Enexplored open paths starting from this position
+                            self.unexploredJunctions[self.position] = False
+                            print(self.unexploredJunctions)
+                if newDirection!=None:
+                    return newDirection
 
-        if self.solvingState == self.SolvingStates.EXPLORE:
-            occupied = False        # TODO different source
-            # i is relative direction: first look if I can drive straight ahead
-            for i in range(4):
-                d = self.Rel2Abs(i)
-                # If no wall in direction, if not occupied, and not aleady visited
-                if not self.positionInfo[d] and not occupied and self.getNextPosition(d) not in self.mazeMemory:
-                    self.facingDirection = d
-                    return i
+                # No possible direction
+                self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
-            # No possible direction
-            self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
+            if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
+                    newdir = self.getNextDirectionToPoint(self.meetingPoint)
+                    if newdir == None:
+                        self.solvingState = self.SolvingStates.GOTOOPENPATH
+                    else:
+                        self.facingDirection = newdir
+                        return self.Abs2Rel(newdir)
 
-        if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-            # FIXME calculation of routeFromMeetingPoint may be done once ??
-            pt = self.meetingPoint
-            routeFromMeetingPoint = [pt]
-            while True:
-                if pt == self.position:
-                    break
+            if self.solvingState == self.SolvingStates.GOTOOPENPATH:
+                # Calculate target junction
+                # -> First junction with unexplored open paths
+                for jPt, jExplored in self.unexploredJunctions.items():
+                    if not jExplored:
+                        self.targetJunction = jPt
+                        break
+                if self.targetJunction == None:
+                    # No unexplored junctions
+                    # FIXME
+                    sys.exit(0)
+                newdir = self.getNextDirectionToPoint(self.targetJunction)
+                if newdir == None:
+                    # TODO ???
+                    # Reached destination
+                    self.targetJunction = None
+                    self.solvingState = self.SolvingStates.EXPLORE
+                else:
+                    self.facingDirection = newdir
+                    return self.Abs2Rel(newdir)
 
-                # Search for all keys with PT
-                for key, value in self.routeToSelf.items():
-                    # Key (A,B)
-                    if (pt==key[0] or pt==key[1]) and value!=pt:
-                        # If outward pointing edge
-                        routeFromMeetingPoint.append(value)
-                        pt = value
-                        break;
-            # Found route from meeting point to me
-            nextPos = routeFromMeetingPoint[-2]
-            # Next position is routeToMeetingPoint[1]
-            newdir = self.getNextDirection(nextPos)
-            self.facingDirection = newdir
-            return self.Abs2Rel(newdir)
-
-        elif self.solvingState == self.SolvingStates.GOTOOPENPATH:
-            pass
-
-        else:
-            raise ValueError
+ 
 
     """ Convert absolute direction to relative
     Returns relative direction
@@ -130,7 +144,7 @@ class Algorithm():
     def Rel2Abs(self, newdir):
         return (newdir+self.facingDirection)%4
 
-    """ Get next position in a certain direction
+    """ Get next position of adjacent square in a certain direction
     Dir->Pos
     """
     def getNextPosition(self, newDir):
@@ -146,7 +160,7 @@ class Algorithm():
         else:
             raise ValueError
 
-    """ Get next direction
+    """ Get corresponding direction from current position to a adjacent position
     Pos->Dir
     """
     def getNextDirection(self, newPos):
@@ -162,6 +176,33 @@ class Algorithm():
             return WEST
         else:
             raise ValueError
+
+    """ Get direction to next position to a specific known point in
+    the maze.
+    Gets this info from routeToSelf
+    pt: (x,y)
+    Returns: absolute direction towards next square. None if target point reached
+    """
+    def getNextDirectionToPoint(self, pt):
+        routeFromPoint = [pt]
+        while True:
+            if pt == self.position:
+                break
+
+            if pt in self.routeToSelf:
+                routeFromPoint.append(self.routeToSelf[pt])
+                pt = self.routeToSelf[pt]
+
+        # Check if at the meeting point
+        if len(routeFromPoint)==1:
+            return None
+
+        else:
+            # Found route from meeting point to me
+            nextPos = routeFromPoint[-2]
+            # Next position is routeToMeetingPoint[1]
+            newdir = self.getNextDirection(nextPos)
+            return newdir
 
 if __name__ == "__main__":
     pass
