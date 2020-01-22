@@ -36,6 +36,10 @@ class Algorithm():
         while True:
             window.fill((255, 255, 255))
 
+            # Draw meeting point
+            x,y = self.meetingPoint
+            pygame.draw.rect(window, (0,255,0), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
+
             # Draw known maze
             for k,v in self.mazeMemory.items():
                 x,y = k
@@ -52,6 +56,14 @@ class Algorithm():
             # Draw current position
             x,y = self.position
             pygame.draw.circle(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), 2, 0)
+            if self.facingDirection == NORTH:
+                pygame.draw.line(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y)*gGS)), 2)
+            elif self.facingDirection == SOUTH:
+                pygame.draw.line(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+1)*gGS)), 2)
+            elif self.facingDirection == EAST:
+                pygame.draw.line(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x+1)*gGS), int(gOffs+(y+0.5)*gGS)), 2)
+            elif self.facingDirection == WEST:
+                pygame.draw.line(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x)*gGS), int(gOffs+(y+0.5)*gGS)), 2)
 
             pygame.display.update()
             fpsCam.tick(15)
