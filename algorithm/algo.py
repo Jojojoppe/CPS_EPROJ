@@ -5,6 +5,9 @@ import pickle
 import time
 #from NetworkEmulator.netemuclient import NetEmuClient
 
+import threading
+import pygame
+
 NORTH = 0
 EAST = 1
 SOUTH = 2
@@ -23,6 +26,35 @@ class Algorithm():
         EXPLORE = 0
         GOTOMEETINGPOINT = 1
         GOTOOPENPATH = 2
+
+    def gui(self):
+        pygame.init()
+        fpsCam = pygame.time.Clock()
+        gOffs, gGS = 16, 16
+        window = pygame.display.set_mode((16*gGS+2*gOffs, 16*gGS+2*gOffs), 0, 32)
+
+        while True:
+            window.fill((255, 255, 255))
+
+            # Draw known maze
+            for k,v in self.mazeMemory.items():
+                x,y = k
+                north, east, south, west, final = v
+                if west:
+                    pygame.draw.line(window, (0,0,0), (gOffs+x*gGS, gOffs+y*gGS), (gOffs+x*gGS, gOffs+(y+1)*gGS), 1)
+                if north:
+                    pygame.draw.line(window, (0,0,0), (gOffs+x*gGS, gOffs+y*gGS), (gOffs+(x+1)*gGS, gOffs+y*gGS), 1)
+                if east:
+                    pygame.draw.line(window, (0,0,0), (gOffs+(x+1)*gGS, gOffs+y*gGS), (gOffs+(x+1)*gGS, gOffs+(y+1)*gGS), 1)
+                if south:
+                    pygame.draw.line(window, (0,0,0), (gOffs+x*gGS, gOffs+(y+1)*gGS), (gOffs+(x+1)*gGS, gOffs+(y+1)*gGS), 1)
+
+            # Draw current position
+            x,y = self.position
+            pygame.draw.circle(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), 2, 0)
+
+            pygame.display.update()
+            fpsCam.tick(15)
 
     """ Init function
     """
@@ -58,6 +90,9 @@ class Algorithm():
         self.updateRouteToSelf = []
         self.updateUnexploredJunctions = []
         self.mayUpdate = False
+
+        self.guiThread = threading.Thread(target=self.gui)
+        self.guiThread.start()
 
     """ Called when message is received
     Updates internal memory without changing it: pushes to internal buffer which is resolved by step()
