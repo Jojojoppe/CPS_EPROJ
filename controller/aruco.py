@@ -58,7 +58,7 @@ def main():
         
         middle = -1
         middles = []
-        if ids == None:
+        if ids is None:
             for cnt in contours:
                 x, y, w, h = cv2.boundingRect(cnt)
                 middles.append(x+w/2.0)
@@ -73,7 +73,7 @@ def main():
             middle = -1
 
         
-        if filtered == None:
+        if filtered is None:
             filtered = middle
 
         # Exponential moving average filter
@@ -83,7 +83,7 @@ def main():
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
 
-        print(aruco_and_middle)
+        # print(aruco_and_middle)
 
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)

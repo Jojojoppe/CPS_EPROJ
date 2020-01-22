@@ -2,7 +2,7 @@ import gopigo
 import random
 import time
 import controller.aruco as aruco
-import controller.space as space
+from controller.space import Direction
 import NetworkEmulator.netemuclient as netemuclient
 from enum import Enum
 
@@ -10,6 +10,8 @@ from enum import Enum
 base_speed = 150
 kp = 120
 turn_angle = 85
+compass = Direction()
+
 
 
 def get_control_out(p0):
@@ -70,7 +72,7 @@ def get_turn(m):
     #         return dirs[i]
 
     # return "straight"
-    return "around"
+    return "right"
 
 def around():
     gopigo.set_left_speed(250)
@@ -90,20 +92,23 @@ def around():
         time.sleep(0.8)
 
 
-def do_turn(direction):
+def do_turn(d):
+    global turn_angle, compass
+
     gopigo.set_left_speed(250)
     gopigo.set_right_speed(250)
-    global turn_angle
     time.sleep(0.1)
-    if direction == "left":
+
+    compass.turn_c(d)
+    print(compass.get_direction())
+    if d == "left":
         gopigo.turn_left_wait_for_completion(turn_angle)
-    elif direction == "around":
+    elif d == "around":
         around()
 
         gopigo.stop()
     else:
         gopigo.turn_right_wait_for_completion(turn_angle)
-    print("Turn done")
     time.sleep(0.1)
     gopigo.fwd()
     drive_forwards(0.5)
@@ -130,7 +135,7 @@ def change_state(m, t):
     new_state = State.STOP
 
     if state == State.DRIVE:
-        if m == None or m == -1:
+        if m is None or m == -1:
             new_state = State.DRIVE
         elif m >= 0 and m != prev_marker:
             new_state = State.STOP
@@ -141,7 +146,6 @@ def change_state(m, t):
         prev_marker = m
         if time.time() - 1 > state_timer:
             direction = get_turn(m)
-            print("dir:", direction)
             if direction == "left":
                 new_state = State.TURN_LEFT
             elif direction == "right":
@@ -172,8 +176,6 @@ def change_state(m, t):
             new_state = State.TURN_AROUND
 
     if new_state != state:
-        print(new_state, m)
-        # TODO make better
         if state == State.STOP and new_state == State.DRIVE:
             gopigo.fwd()
         state_timer = time.time()
@@ -190,7 +192,7 @@ def main():
     gopigo.set_right_speed(0)
     gopigo.fwd()
     
-    print(state)
+    print(compass.get_direction())
     while True:
 
         (marker, t) = aruco.get_result()
