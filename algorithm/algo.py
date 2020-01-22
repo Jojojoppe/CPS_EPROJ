@@ -63,6 +63,8 @@ class Algorithm():
     Updates internal memory without changing it: pushes to internal buffer which is resolved by step()
     """
     def recv(self, data:bytes, rssi:int):
+        print()
+        print("Receive:")
         self.mayUpdate = False
         msgData = pickle.loads(data)
         otherMazeMemory = msgData[0]
@@ -74,6 +76,7 @@ class Algorithm():
         for k,v in otherMazeMemory.items():
             if k not in self.mazeMemory:
                 self.updateMazeMemory.append((k,v))
+        print("updateMazeMemory", self.updateMazeMemory)
 
         # Update route to self
         # for k,v in otherRouteToSelf.items():
@@ -81,8 +84,7 @@ class Algorithm():
         #         self.updateRouteToSelf.append((k,v))
         # FIXME self.meetingpoint? Not the same as mine?
         route = self.getPathFromPointToPoint(otherRouteToSelf, self.meetingPoint, otherPosition)
-        print()
-        print(route)
+        print("route", route)
         uniqueRoute = []
         notUniqueRoute = []
         # Delete points we already know
@@ -91,8 +93,8 @@ class Algorithm():
                 uniqueRoute.append(p)
             else:
                 notUniqueRoute.append(p)
-        print(uniqueRoute)
-        print(notUniqueRoute)
+        print("uniqueRoute", uniqueRoute)
+        print("notUniqueRoute", notUniqueRoute)
         if len(uniqueRoute)>0:
             for i in range(len(uniqueRoute)-1):
                 p = uniqueRoute[-1*i-1]
@@ -101,7 +103,7 @@ class Algorithm():
             p = uniqueRoute[0]
             np = notUniqueRoute[-1]
             self.updateRouteToSelf.append((p, np))
-            print(self.updateRouteToSelf)
+        print("updateRouteToSelf", self.updateRouteToSelf)
 
         # Update unexploredJunctions
         for k,v in otherUnexploredJunctions.items():
@@ -111,6 +113,7 @@ class Algorithm():
             # If known junction of other bot is explored
             elif v and not self.unexploredJunctions[k]:
                 self.updateUnexploredJunctions.append((k,v))
+        print("updateUnexploredJunction", self.updateUnexploredJunctions)
         
         self.mayUpdate = True
 
@@ -132,6 +135,10 @@ class Algorithm():
         for upd in self.updateUnexploredJunctions:
             self.unexploredJunctions[upd[0]] = upd[1]
         self.updateUnexploredJunctions.clear()
+        print("Updating")
+        print("mazeMemory", self.mazeMemory)
+        print("routeToSelf", self.routeToSelf)
+        print("unexploredJunctions", self.unexploredJunctions)
 
     """ Called in main loop
     """
@@ -142,6 +149,7 @@ class Algorithm():
 
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter%5==0:
+            print("SENDING")
             self.network.send(pickle.dumps(
                 [self.mazeMemory, self.routeToSelf, self.unexploredJunctions, self.position]
             ))
@@ -159,6 +167,7 @@ class Algorithm():
         # Every EDGE (between two points) needs data. problem: 1->2 and 2->1 are same
         # edge, so just adding both combinations to dict will always update the edge
         self.routeToSelf[self.prevPosition] = self.position
+        print("position", self.position)
         
 
     """ Called when new direction is needed
@@ -184,15 +193,15 @@ class Algorithm():
                         else:
                             # There are Enexplored open paths starting from this position
                             self.unexploredJunctions[self.position] = False
-                            print(self.unexploredJunctions)
                 if newDirection!=None:
+                    print("newDirection", newDirection)
                     return newDirection
 
                 # No possible direction
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-                print("GOTOMEETINGPOINT")
+                print("GOTOMEETINGPOINT", self.meetingPoint)
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
                 if newdir == None:
                     self.solvingState = self.SolvingStates.GOTOOPENPATH
@@ -209,22 +218,22 @@ class Algorithm():
                     if not jExplored:
                         self.targetJunction = jPt
                         break
-                print(self.targetJunction)
+                print("junction:", self.targetJunction)
                 if self.targetJunction == None:
                     # No unexplored junctions
                     # FIXME
                     print("NO UNEXPLORED JUNCTIONS")
-                print(self.routeToSelf)
-                newdir = self.getNextDirectionToPoint(self.targetJunction)
-                if newdir == None:
-                    # TODO ???
-                    # Reached destination
-                    self.targetJunction = None
-                    self.solvingState = self.SolvingStates.EXPLORE
                 else:
-                    self.facingDirection = newdir
-                    return self.Abs2Rel(newdir)
-            time.sleep(0)
+                    newdir = self.getNextDirectionToPoint(self.targetJunction)
+                    if newdir == None:
+                        # TODO ???
+                        # Reached destination
+                        self.targetJunction = None
+                        self.solvingState = self.SolvingStates.EXPLORE
+                    else:
+                        self.facingDirection = newdir
+                        return self.Abs2Rel(newdir)
+                time.sleep(0)
 
  
 
@@ -281,7 +290,10 @@ class Algorithm():
     """
     def getNextDirectionToPoint(self, pt):
         routeFromPoint = [pt]
+        if pt not in self.routeToSelf:
+            return None
         while pt!=self.position:
+            print("getNextDirectionToPoint", pt, self.routeToSelf)
             if pt in self.routeToSelf:
                 routeFromPoint.append(self.routeToSelf[pt])
                 pt = self.routeToSelf[pt]
@@ -320,3 +332,9 @@ if __name__ == "__main__":
 # initial prevPosition may be None if bot starts on a position and NOT outside the maze
 # Assumption for now: starting next to eachother and 2 bots in swarm
 # 0,0 is left upper corner (like in images)
+
+# 4 MAIN FUNCIONS
+# recv: receive message callback
+# step: callback called in control loop
+# newPos: called when aruco marker is scanned
+# getDirection: directly called after newPos() to get relative direction to drive in

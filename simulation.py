@@ -31,7 +31,7 @@ def main():
     # Receive the maze
     x,y = 4, 0
     network = netemuclient.NetEmuClient.connect(recv, (x,y))
-    network.txpower(0.50)
+    network.txpower(1)
 
     # Starup algorithm
     algoInstance = algo.Algorithm(network, (x,y))
@@ -40,7 +40,7 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.05)
+        time.sleep(0.01)
         counter += 1
         if counter == 10:
             counter = 0
