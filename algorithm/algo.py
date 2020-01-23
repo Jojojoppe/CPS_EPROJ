@@ -49,15 +49,29 @@ class Algorithm():
                 else:
                     pygame.draw.rect(window, (255,220,220), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
 
+            # Draw meeting point
+            x,y = self.meetingPoint
+            pygame.draw.rect(window, (0,255,0), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
+
+            # Draw route to self
+            for k,v in self.routeToSelf.items():
+                x,y = k
+                px,py = v
+                pygame.draw.circle(window, (160, 160, 160), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), 2, 0)
+                if px==x and py==y-1:
+                    pygame.draw.line(window, (160, 160, 160), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y)*gGS)), 1)
+                elif px==x and py==y+1:
+                    pygame.draw.line(window, (160, 160, 160), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+1)*gGS)), 1)
+                elif px==x-1 and py==y:
+                    pygame.draw.line(window, (160, 160, 160), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x)*gGS), int(gOffs+(y+0.5)*gGS)), 1)
+                elif px==x+1 and py==y:
+                    pygame.draw.line(window, (160, 160, 160), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x+1.0)*gGS), int(gOffs+(y+0.5)*gGS)), 1)
+
             # Draw target junction if one
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
                 if self.targetJunction != None:
                     x,y = self.targetJunction
                     pygame.draw.circle(window, (0, 0, 255), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), 2, 0)
-
-            # Draw meeting point
-            x,y = self.meetingPoint
-            pygame.draw.rect(window, (0,255,0), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
 
             # Draw known maze walls
             for k,v in self.mazeMemory.items():

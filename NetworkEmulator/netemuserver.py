@@ -91,7 +91,7 @@ class ThreadConnection(threading.Thread):
                     pass
                 # ----------------
                 msg = None
-                buf = b''
+                #buf = b''
 
     def stop(self):
         self.running = False

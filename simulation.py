@@ -31,7 +31,7 @@ def main():
     # Receive the maze
     x,y = 4, 0
     network = netemuclient.NetEmuClient.connect(recv, (x,y))
-    network.txpower(1)
+    network.txpower(0.02)
 
     # Starup algorithm
     algoInstance = algo.Algorithm(network, (x,y))
