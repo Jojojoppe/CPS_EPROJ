@@ -5,6 +5,9 @@ import algorithm.algo as algo
 
 """Data received from network
 """
+
+
+algoInstance = None
 def recv(data:bytes, rssi:int):
     global algoInstance
     algoInstance.recv(data, rssi)
@@ -40,7 +43,7 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.02)
+        time.sleep(0.01)
         counter += 1
         if counter == 20:
             counter = 0

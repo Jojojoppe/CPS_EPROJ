@@ -317,7 +317,6 @@ class Algorithm:
             other = self.otherPositions[c]
 
         if self.sync:
-            print("Sync", len(self.mazeMemory))
             avg = self.avgT(self.position, other)
             maxi = (-1, self.meetingPoint)
             if self.checkMeetingPoint():
