@@ -34,13 +34,32 @@ class Algorithm():
         window = pygame.display.set_mode((16*gGS+2*gOffs, 16*gGS+2*gOffs), 0, 32)
 
         while True:
-            window.fill((255, 255, 255))
+            window.fill((220, 220, 220))
+
+            # Draw known maze tiles
+            for k,v in self.mazeMemory.items():
+                x,y = k
+                pygame.draw.rect(window, (255,255,255), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
+
+            # Draw known junctions
+            for k,v in self.unexploredJunctions.items():
+                x,y = k
+                if v:
+                    pygame.draw.rect(window, (220,220,255), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
+                else:
+                    pygame.draw.rect(window, (255,220,220), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
+
+            # Draw target junction if one
+            if self.solvingState == self.SolvingStates.GOTOOPENPATH:
+                if self.targetJunction != None:
+                    x,y = self.targetJunction
+                    pygame.draw.circle(window, (0, 0, 255), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), 2, 0)
 
             # Draw meeting point
             x,y = self.meetingPoint
             pygame.draw.rect(window, (0,255,0), (gOffs+x*gGS, gOffs+y*gGS, gGS,gGS))
 
-            # Draw known maze
+            # Draw known maze walls
             for k,v in self.mazeMemory.items():
                 x,y = k
                 north, east, south, west, final = v
