@@ -82,6 +82,8 @@ def main():
 
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
+        if ids is not None:
+            print(ids)
 
         # print(aruco_and_middle)
 
@@ -106,6 +108,5 @@ atexit.register(stop)
 if __name__ == "__main__":
     try:
         pass
-
     except KeyboardInterrupt:
         stop()

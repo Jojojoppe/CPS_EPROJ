@@ -72,7 +72,7 @@ def get_turn(m):
     #         return dirs[i]
 
     # return "straight"
-    return "right"
+    return "around"
 
 def around():
     gopigo.set_left_speed(250)
