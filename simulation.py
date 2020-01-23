@@ -40,7 +40,7 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.01)
+        time.sleep(0.02)
         counter += 1
         if counter == 10:
             counter = 0

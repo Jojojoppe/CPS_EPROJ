@@ -98,6 +98,11 @@ class Algorithm():
             elif self.facingDirection == WEST:
                 pygame.draw.line(window, (255, 0, 0), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), (int(gOffs+(x)*gGS), int(gOffs+(y+0.5)*gGS)), 2)
 
+            # Draw other positions
+            for k,p in self.otherPositions.items():
+                x,y = p
+                pygame.draw.circle(window, (0, 255, 255), (int(gOffs+(x+0.5)*gGS), int(gOffs+(y+0.5)*gGS)), 2, 0)
+
             pygame.display.update()
             fpsCam.tick(15)
 
@@ -106,12 +111,17 @@ class Algorithm():
     def __init__(self, network, position):
         self.network = network
 
+        self.ID = network.ip + str(network.port)
+
         # Internal state variables
         self.position = position
         self.prevPosition = None
         self.positionInfo = (False, False, False, False, False)
         self.facingDirection = NORTH
         self.meetingPoint = position
+
+        # Other bots
+        self.otherPositions = {}
 
         # Algo parameters
         self.amountInSwarm = 2
@@ -151,6 +161,10 @@ class Algorithm():
         otherRouteToSelf = msgData[1]
         otherUnexploredJunctions = msgData[2]
         otherPosition = msgData[3]
+        otherID = msgData[4]
+
+        # Update ID
+        self.otherPositions[otherID] = otherPosition
 
         # Update maze memory
         for k,v in otherMazeMemory.items():
@@ -158,11 +172,16 @@ class Algorithm():
                 self.updateMazeMemory.append((k,v))
         print("updateMazeMemory", self.updateMazeMemory)
 
-        # Update route to self
-        # for k,v in otherRouteToSelf.items():
-        #     if k not in self.routeToSelf:
-        #         self.updateRouteToSelf.append((k,v))
+        # Update routeToSelf
         # FIXME self.meetingpoint? Not the same as mine?
+        # FIXME self on meeting point?
+        # FIXME what about all other tiles other has visited: NOT IN PATH FROM MP TO OTHER
+        # FIXME first update complete map then overwrite path from other to last common point
+        # Update complete routeToSelf map
+        for k,v in otherRouteToSelf.items():
+            if k not in self.routeToSelf:
+                self.updateRouteToSelf.append((k,v))
+        # Overwrite path from other to last common point
         route = self.getPathFromPointToPoint(otherRouteToSelf, self.meetingPoint, otherPosition)
         print("route", route)
         uniqueRoute = []
@@ -229,9 +248,9 @@ class Algorithm():
 
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter%5==0:
-            print("SENDING")
+            #print("SENDING")
             self.network.send(pickle.dumps(
-                [self.mazeMemory, self.routeToSelf, self.unexploredJunctions, self.position]
+                [self.mazeMemory, self.routeToSelf, self.unexploredJunctions, self.position, self.ID]
             ))
 
     """ Called when aruco marker is detected
@@ -247,7 +266,7 @@ class Algorithm():
         # Every EDGE (between two points) needs data. problem: 1->2 and 2->1 are same
         # edge, so just adding both combinations to dict will always update the edge
         self.routeToSelf[self.prevPosition] = self.position
-        print("position", self.position)
+        #print("position", self.position)
         
 
     """ Called when new direction is needed
@@ -256,7 +275,7 @@ class Algorithm():
     def getDirection(self):
         while True:
             if self.solvingState == self.SolvingStates.EXPLORE:
-                print("EXPLORE")
+                #print("EXPLORE")
                 self.updateFromBuffers()
                 occupied = False        # TODO different source
                 newDirection = None
@@ -274,14 +293,14 @@ class Algorithm():
                             # There are Enexplored open paths starting from this position
                             self.unexploredJunctions[self.position] = False
                 if newDirection!=None:
-                    print("newDirection", newDirection)
+                    #print("newDirection", newDirection)
                     return newDirection
 
                 # No possible direction
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-                print("GOTOMEETINGPOINT", self.meetingPoint)
+                #print("GOTOMEETINGPOINT", self.meetingPoint)
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
                 if newdir == None:
                     self.solvingState = self.SolvingStates.GOTOOPENPATH
@@ -290,7 +309,7 @@ class Algorithm():
                     return self.Abs2Rel(newdir)
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
-                print("GOTOOPENPATH")
+                #print("GOTOOPENPATH")
                 self.updateFromBuffers()
                 # Calculate target junction
                 # -> First junction with unexplored open paths
@@ -298,11 +317,12 @@ class Algorithm():
                     if not jExplored:
                         self.targetJunction = jPt
                         break
-                print("junction:", self.targetJunction)
+                #print("junction:", self.targetJunction)
                 if self.targetJunction == None:
                     # No unexplored junctions
                     # FIXME
-                    print("NO UNEXPLORED JUNCTIONS")
+                    #print("NO UNEXPLORED JUNCTIONS")
+                    pass
                 else:
                     newdir = self.getNextDirectionToPoint(self.targetJunction)
                     if newdir == None:
@@ -373,7 +393,7 @@ class Algorithm():
         if pt not in self.routeToSelf:
             return None
         while pt!=self.position:
-            print("getNextDirectionToPoint", pt, self.routeToSelf)
+            #print("getNextDirectionToPoint", pt, self.routeToSelf)
             if pt in self.routeToSelf:
                 routeFromPoint.append(self.routeToSelf[pt])
                 pt = self.routeToSelf[pt]
