@@ -42,7 +42,7 @@ def main():
         algoInstance.step()
         time.sleep(0.02)
         counter += 1
-        if counter == 10:
+        if counter == 20:
             counter = 0
             algoInstance.getDirection()
             x,y = algoInstance.getNextPosition(algoInstance.facingDirection)

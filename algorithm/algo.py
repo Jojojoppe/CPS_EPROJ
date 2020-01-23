@@ -134,12 +134,20 @@ class Algorithm:
 
         self.ID = network.ip + str(network.port)
 
+
+        self.update = False
+        self.sync = False
+        self.scount = 0
+
         # Internal state variables
         self.position = position
         self.prevPosition = None
         self.positionInfo = (False, False, False, False, False)
         self.facingDirection = NORTH
         self.meetingPoint = position
+
+
+
 
         # Other bots
         self.otherPositions = {}
@@ -189,6 +197,11 @@ class Algorithm:
         otherPosition = msgData[3]
         otherID = msgData[4]
         otherMeeting = msgData[5]
+        othersync = msgData[6]
+
+        self.sync = True
+
+
 
         # Update ID
         self.otherPositions[otherID] = otherPosition
@@ -254,6 +267,7 @@ class Algorithm:
         self.updateRouteToSelf.clear()
         # Update unexplored junctions
         for upd in self.updatejunctions:
+
             self.junctions[upd[0]] = upd[1]
         self.updatejunctions.clear()
 
@@ -268,7 +282,7 @@ class Algorithm:
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter % 5 == 0:
             self.network.send(pickle.dumps(
-                [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint]
+                [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync]
             ))
 
     """ Called when aruco marker is detected
@@ -290,7 +304,31 @@ class Algorithm:
     Returns string: left right straight back (RELATIVE)
     """
 
+    def avgT(self, a, b):
+        return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+
+    def manhattan(self, a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
     def getDirection(self):
+
+        other = (-1, -1)
+        for c in self.otherPositions:
+            other = self.otherPositions[c]
+
+        if self.sync:
+            print("Sync", len(self.mazeMemory))
+            avg = self.avgT(self.position, other)
+            maxi = (-1, self.meetingPoint)
+            if self.checkMeetingPoint():
+                for j in self.junctions:
+                    if not self.junctions[j]:
+                        if self.manhattan(j, avg) > maxi[0]:
+                            maxi = (self.manhattan(j, avg), j)
+                # print("New meeting point")
+            self.meetingPoint = maxi[1]
+        self.sync = False
+
         # if self.meetingPoint in self.junctions:
         #     print(self.junctions[self.meetingPoint])
         while True:
@@ -319,9 +357,13 @@ class Algorithm:
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-                if self.junctions[self.meetingPoint]:
-                    print("New meeting point")
+
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
+                # for j in self.junctions:
+                #     if not self.junctions[j]:
+                #         newdir = self.getNextDirectionToPoint(j)
+
+
                 if newdir is None:
                     self.solvingState = self.SolvingStates.GOTOOPENPATH
                 else:
