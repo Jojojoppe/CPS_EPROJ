@@ -33,6 +33,7 @@ class Algorithm:
         GOTOMEETINGPOINT = 1
         GOTOOPENPATH = 2
         GOTOEXIT = 3
+        GOTORAND = 4
 
     def gui(self):
         pygame.init()
@@ -321,7 +322,7 @@ class Algorithm:
                 [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
 
-        for k,v in self.otherPositionTTL.items()``:
+        for k,v in self.otherPositionTTL.items():
             if v==0 and k in self.otherPositions:
                 self.otherPositions.pop(k)
                 self.otherNextPositions.pop(k)
@@ -453,6 +454,21 @@ class Algorithm:
                     self.nextPosition = self.getNextPosition(newdir)
                     return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
+            if self.solvingState == self.SolvingStates.GOTORAND:
+                print("GOTO RANDOM")
+                self.updateFromBuffers()
+                newdir = self.getNextDirectionToPoint(list(self.junctions.keys())[random.randint(0, len(self.junctions)-1)])
+                if newdir is None:
+                    # TODO ???
+                    # Reached destination
+                    self.nextPosition = self.position
+                    return STOP
+                else:
+                    self.facingDirection = newdir
+                    self.nextPosition = self.getNextPosition(newdir)
+                    self.solvingState = self.SolvingStates.EXPLORE
+                    return self.mayGoToNextPoint(self.Abs2Rel(newdir))
+
             time.sleep(0)
 
     """ Convert absolute direction to relative
@@ -552,9 +568,11 @@ class Algorithm:
     def mayGoToNextPoint(self, newDir):
         for k,v in self.otherPositions.items():
             if self.nextPosition == v:
+                self.solvingState = self.SolvingStates.GOTORAND
                 return STOP
         for k,v in self.otherNextPositions.items():
             if self.nextPosition == v:
+                self.solvingState = self.SolvingStates.GOTORAND
                 return STOP
         return newDir
 
