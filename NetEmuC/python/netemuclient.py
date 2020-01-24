@@ -24,6 +24,9 @@ class NetEmuClient(threading.Thread):
 
         self.running = True
 
+        self.maze = {}
+        self.mazeDone = False
+
         # Connect to server
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,6 +35,12 @@ class NetEmuClient(threading.Thread):
         except Exception as e:
             print("Could not connect to socket or server: %s"%str(e))
             sys.exit(0)
+
+    def waitForMaze(self):
+        # Wait for maze
+        while not self.mazeDone:
+            pass
+        print("Maze received")
 
     def stop(self):
         self.running = False
@@ -89,13 +98,20 @@ class NetEmuClient(threading.Thread):
                     self.recv_func(buf[2:packetsize], rssi)
                 elif buf[0]==2:
                     # MAZE PACKET
-                    print("Maze packet")
-                    print(buf)
+                    self._receiveMaze(buf[1:packetsize])
+                    self.mazeDone = True
                 if len(buf)==packetsize:
                     buf=b''
                 else:
                     buf = buf[packetsize:]
                 packetsize = None
+
+    def _receiveMaze(self, data:bytes):
+        while len(data)>0:
+            # Get data
+            x, y, north, east, south, west, final = struct.unpack("<II?????", data[0:13])
+            data = data[13:]
+            self.maze[(x,y)] = (north, east, south, west, final)
 
 def r(data:bytes, rssi:int):
     print(data, rssi)
@@ -103,6 +119,7 @@ def r(data:bytes, rssi:int):
 if __name__=="__main__":
     n = NetEmuClient(r, 'localhost', 8080)
     n.start()
+    n.waitForMaze()
     x,y = 8,8
     n.position(x,y)
     n.txpower(0.04)
