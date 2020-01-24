@@ -3,7 +3,7 @@ import random
 import time
 import controller.aruco as aruco
 from controller.space import Direction
-import NetworkEmulator.netemuclient as netemuclient
+import NetEmuC.python.netemuclient as netemuclient
 from enum import Enum
 
 
@@ -36,7 +36,7 @@ def drive_forwards(target):
 
 """Data received from network
 """
-def recv(data:bytes, rssi:int):
+def rec(data:bytes, rssi:int):
     print(rssi, data)
 
 
@@ -46,12 +46,15 @@ Returns tupe with:
     final: True if exit of maze
 """
 def newPosition(markerID:int):
-    # global network
-    # x = markerID&0x0f
-    # y = (markerID//16)&0x0f
-    # info = network.maze.getInfo((x, y))
-    # network.position(float(x), float(y))
-    # return info
+    global network
+    # NEW NETWORK THINGS
+    # TODO this is for markers of size 6, not for 4
+    x = markerID&0x0f
+    y = (markerID//16)&0x0f
+    info = network.maze[(x,y)]
+    network.position(float(x), float(y))
+    return info
+
     if markerID==3:
         return (True, True, False, True, False)
     elif markerID==4:
@@ -185,8 +188,12 @@ def change_state(m, t):
 
 def main():
     global network, state, prev_marker
-    # position = random.randint(0,15), random.randint(0,15)
-    # network = netemuclient.NetEmuClient.connect(recv, position)
+
+    position = 8,0
+    network = netemuclient.NetEmuClient(rec, "localhost", 8080)
+    network.position(*position)
+    network.txpower(0.04)
+
     time.sleep(1)
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
