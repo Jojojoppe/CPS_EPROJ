@@ -8,6 +8,8 @@ import time
 import threading
 import pygame
 
+
+# FIXME convert to strings afterwards
 NORTH = 0
 EAST = 1
 SOUTH = 2
@@ -17,6 +19,7 @@ STRAIGHT = 0
 RIGHT = 1
 BACK = 2
 LEFT = 3
+STOP = 4
 
 """Algorithm class
 """
@@ -59,6 +62,11 @@ class Algorithm:
             if self.exitFound is not None:
                 x,y = self.exitFound
                 pygame.draw.rect(window, (255, 255, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+
+            if self.nextPosition is not None:
+                x,y = self.nextPosition
+                pygame.draw.rect(window, (255, 0, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+
 
             # Draw route to self
             for k, v in self.routeToSelf.items():
@@ -148,12 +156,10 @@ class Algorithm:
         # Internal state variables
         self.position = position
         self.prevPosition = None
+        self.nextPosition = None
         self.positionInfo = (False, False, False, False, False)
         self.facingDirection = NORTH
         self.meetingPoint = position
-
-
-
 
         # Other bots
         self.otherPositions = {}
@@ -208,6 +214,7 @@ class Algorithm:
         otherMeeting = msgData[5]
         othersync = msgData[6]
         otherExitFound = msgData[7]
+        otherNextPosition = msgData[8]
 
         self.sync = True
 
@@ -300,7 +307,7 @@ class Algorithm:
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter % 5 == 0:
             self.network.send(pickle.dumps(
-                [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound]
+                [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
 
     """ Called when aruco marker is detected
@@ -370,6 +377,7 @@ class Algorithm:
                             # There are Enexplored open paths starting from this position
                             self.junctions[self.position] = False
                 if newDirection is not None:
+                    self.nextPosition = self.getNextPosition(self.facingDirection)
                     return newDirection
 
                 # No possible direction
@@ -387,6 +395,7 @@ class Algorithm:
                     self.solvingState = self.SolvingStates.GOTOOPENPATH
                 else:
                     self.facingDirection = newdir
+                    self.nextPosition = self.getNextPosition(newdir)
                     return self.Abs2Rel(newdir)
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
@@ -399,8 +408,8 @@ class Algorithm:
                         break
                 if self.targetJunction is None:
                     # No unexplored junctions
-                    # FIXME
-                    pass
+                    self.nextPosition = self.position
+                    return STOP
                 else:
                     newdir = self.getNextDirectionToPoint(self.targetJunction)
                     if newdir is None:
@@ -410,6 +419,7 @@ class Algorithm:
                         self.solvingState = self.SolvingStates.EXPLORE
                     else:
                         self.facingDirection = newdir
+                        self.nextPosition = self.getNextPosition(newdir)
                         return self.Abs2Rel(newdir)
 
             if self.solvingState == self.SolvingStates.GOTOEXIT:
@@ -418,9 +428,11 @@ class Algorithm:
                 if newdir is None:
                     # TODO ???
                     # Reached destination
-                    pass
+                    self.nextPosition = self.position
+                    return STOP
                 else:
                     self.facingDirection = newdir
+                    self.nextPosition = self.getNextPosition(newdir)
                     return self.Abs2Rel(newdir)
 
             time.sleep(0)

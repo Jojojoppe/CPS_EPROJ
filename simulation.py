@@ -50,9 +50,10 @@ def main():
         counter += 1
         if counter == 20:
             counter = 0
-            algoInstance.getDirection()
-            x,y = algoInstance.getNextPosition(algoInstance.facingDirection)
-            newPosition(x,y)
+            d = algoInstance.getDirection()
+            if d != 4:
+                x,y = algoInstance.getNextPosition(algoInstance.facingDirection)
+                newPosition(x,y)
 
 if __name__ == "__main__":
     while True:
