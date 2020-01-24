@@ -1,6 +1,7 @@
 #include "Maze.hpp"
 #include <cstdlib>
 #include <tuple>
+#include <time.h>
 
 Maze::Maze(int width, int height){
     this->width = width;
@@ -20,6 +21,7 @@ Maze::~Maze(){
 }
 
 void Maze::generate(){
+     srand(time(0)); 
     std::vector<std::tuple<int,int>> stack;
     std::tuple<int,int> initial(0, 0);
 
@@ -90,4 +92,17 @@ std::vector<std::tuple<int,int>> Maze::get_neighbours(std::tuple<int,int> pos){
         res.push_back(std::tuple<int,int>(x,y-1));
     }
     return res;
+}
+
+void Maze::reload(){
+    for(int x=0; x<this->width; x++){
+        for(int y=0; y<this->height; y++){
+            uint8_t* bs = (uint8_t*) &((uint32_t*)(this->data+13*this->height*x+y*13))[2];
+            this->grid[std::tuple<int,int>(x,y)].north = (bool)bs[0];
+            this->grid[std::tuple<int,int>(x,y)].east = (bool)bs[1];
+            this->grid[std::tuple<int,int>(x,y)].south = (bool)bs[2];
+            this->grid[std::tuple<int,int>(x,y)].west = (bool)bs[3];
+            this->grid[std::tuple<int,int>(x,y)].final = (bool)bs[4];
+        }
+    }
 }

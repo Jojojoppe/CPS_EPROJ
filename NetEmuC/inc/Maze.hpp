@@ -21,4 +21,5 @@ class Maze{
         ~Maze();
         void generate();
         std::vector<std::tuple<int,int>> get_neighbours(std::tuple<int,int> pos);
+        void reload();
 };

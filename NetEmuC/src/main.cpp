@@ -214,9 +214,31 @@ int main(int argc, char ** argv){
     // Set running loops to true
     running = true;
 
+    // Read config
+    INIReader cfg("config.ini");
+    long width = cfg.GetInteger("maze", "width", 16);
+    long height = cfg.GetInteger("maze", "height", 16);
+    bool save = cfg.GetBoolean("maze", "save", false);
+    bool load = cfg.GetBoolean("maze", "load", false);
+    std::string loadfile = cfg.GetString("maze", "loadfile", "test.maze");
+    std::string savefile = cfg.GetString("maze", "savefile", "test.maze");
+
     // Create a maze
     m_maze.lock();
+    maze = Maze(width, height);
     maze.generate();
+    if(load){
+        FILE * fload = fopen(loadfile.c_str(), "rb");
+        fread(maze.data, 1, maze.dataLen, fload);
+        fclose(fload);
+        maze.reload();
+    }else{
+    }
+    if(save){
+        FILE * fsave = fopen(savefile.c_str(), "wb");
+        fwrite(maze.data, 1, maze.dataLen, fsave);
+        fclose(fsave);
+    }
     m_maze.unlock();
 
     // Initialize SDL
