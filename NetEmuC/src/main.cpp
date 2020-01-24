@@ -86,6 +86,12 @@ void * GUI(void * params){
 
         // Draw maze
         m_maze.lock();
+
+        // Draw exit
+
+        SDL_SetRenderDrawColor(rend, 0, 255, 255, SDL_ALPHA_OPAQUE);
+        DrawCircle(rend, 16+15*16+8, 16+15*16+8, 2);
+
         SDL_SetRenderDrawColor(rend, 0, 0, 0, SDL_ALPHA_OPAQUE);
         for(int x=0; x<maze.width; x++){
             for(int y=0; y<maze.height; y++){

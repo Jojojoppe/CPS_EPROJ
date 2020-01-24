@@ -27,6 +27,7 @@ class Algorithm:
         EXPLORE = 0
         GOTOMEETINGPOINT = 1
         GOTOOPENPATH = 2
+        GOTOEXIT = 3
 
     def gui(self):
         pygame.init()
@@ -53,6 +54,11 @@ class Algorithm:
             # Draw meeting point
             x, y = self.meetingPoint
             pygame.draw.rect(window, (0, 255, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+
+            # Draw exit if known
+            if self.exitFound is not None:
+                x,y = self.exitFound
+                pygame.draw.rect(window, (255, 255, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
             # Draw route to self
             for k, v in self.routeToSelf.items():
@@ -157,6 +163,7 @@ class Algorithm:
 
         # Map memory
         self.mazeMemory = {}
+        self.exitFound = None
         # Route to self map
         self.routeToSelf = {}
         # Open paths (not yet explored)
@@ -175,9 +182,11 @@ class Algorithm:
         self.updateRouteToSelf = []
         self.updatejunctions = []
         self.mayUpdate = False
+        self.mayGoToExit = False
 
         self.guiThread = threading.Thread(target=self.gui)
         self.guiThread.start()
+
 
     # Return if the meeting point is explored
     def checkMeetingPoint(self):
@@ -198,6 +207,7 @@ class Algorithm:
         otherID = msgData[4]
         otherMeeting = msgData[5]
         othersync = msgData[6]
+        otherExitFound = msgData[7]
 
         self.sync = True
 
@@ -214,8 +224,6 @@ class Algorithm:
         # Update routeToSelf
         # FIXME self.meetingpoint? Not the same as mine?
         # FIXME self on meeting point?
-        # FIXME what about all other tiles other has visited: NOT IN PATH FROM MP TO OTHER
-        # FIXME first update complete map then overwrite path from other to last common point
         # Update complete routeToSelf map
         for k, v in otherRouteToSelf.items():
             if k not in self.routeToSelf:
@@ -248,6 +256,13 @@ class Algorithm:
             elif v and not self.junctions[k]:
                 self.updatejunctions.append((k, v))
 
+        if otherExitFound is not None and self.exitFound is not None:
+            # BOTH KNOW EXIT
+            self.mayGoToExit = True
+        
+        if otherExitFound is not None:
+            self.exitFound = otherExitFound
+
         self.mayUpdate = True
 
     """[summary]
@@ -271,6 +286,9 @@ class Algorithm:
             self.junctions[upd[0]] = upd[1]
         self.updatejunctions.clear()
 
+        if self.mayGoToExit:
+            self.solvingState = self.SolvingStates.GOTOEXIT
+
     """ Called in main loop
     """
 
@@ -282,7 +300,7 @@ class Algorithm:
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter % 5 == 0:
             self.network.send(pickle.dumps(
-                [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync]
+                [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound]
             ))
 
     """ Called when aruco marker is detected
@@ -295,6 +313,8 @@ class Algorithm:
         self.position = position  # Update position
         self.positionInfo = info
         self.mazeMemory[position] = info
+        if info[4]:
+            self.exitFound = position
         # Update route to self map
         # Every EDGE (between two points) needs data. problem: 1->2 and 2->1 are same
         # edge, so just adding both combinations to dict will always update the edge
@@ -391,7 +411,19 @@ class Algorithm:
                     else:
                         self.facingDirection = newdir
                         return self.Abs2Rel(newdir)
-                time.sleep(0)
+
+            if self.solvingState == self.SolvingStates.GOTOEXIT:
+                self.updateFromBuffers()
+                newdir = self.getNextDirectionToPoint(self.exitFound)
+                if newdir is None:
+                    # TODO ???
+                    # Reached destination
+                    pass
+                else:
+                    self.facingDirection = newdir
+                    return self.Abs2Rel(newdir)
+
+            time.sleep(0)
 
     """ Convert absolute direction to relative
     Returns relative direction

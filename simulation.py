@@ -2,6 +2,7 @@ import random
 import time
 import NetEmuC.python.netemuclient as netemuclient
 import algorithm.algo as algo
+import sys
 
 algoInstance = None
 
@@ -31,7 +32,7 @@ def main():
     # Read server ip from server.ip
     # Connect to network emulator server
     # Receive the maze
-    x,y = 4, 0
+    x,y = int(sys.argv[1]), 0
     network = netemuclient.NetEmuClient(rec, "localhost", 8080)
     network.start()
     network.waitForMaze()

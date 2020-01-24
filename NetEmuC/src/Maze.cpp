@@ -58,6 +58,9 @@ void Maze::generate(){
         }
     }
 
+    // Exit on 15,15
+    this->grid[std::tuple<int,int>(15,15)].final = true;
+
     // Fill maze data
     this->dataLen = this->width*this->height*13;
     this->data = (uint8_t*) malloc(this->dataLen);
