@@ -268,6 +268,14 @@ int main(int argc, char ** argv){
             tv.tv_usec = 0;
             setsockopt(csock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
             printf("> Conneted\r\n");
+            // Sending maze
+            m_maze.lock();
+            unsigned int plen = maze.dataLen+1;
+            unsigned char tp = 2;
+            send(csock, &plen, 4, 0);
+            send(csock, &tp, 1, 0);
+            send(csock, maze.data, maze.dataLen, 0);
+            m_maze.unlock();
             // Start client thread
             pthread_t t_client = pthread_create(&t_client, NULL, client, &csock);
             threads.push_back(t_client);

@@ -16,6 +16,7 @@ Maze::Maze(int width, int height){
 }
 
 Maze::~Maze(){
+    free(this->data);
 }
 
 void Maze::generate(){
@@ -52,6 +53,22 @@ void Maze::generate(){
             }
             this->grid[chosen].visited = true;
             stack.push_back(chosen);
+        }
+    }
+
+    // Fill maze data
+    this->dataLen = this->width*this->height*13;
+    this->data = (uint8_t*) malloc(this->dataLen);
+    for(int x=0; x<this->width; x++){
+        for(int y=0; y<this->height; y++){
+            ((uint32_t*)(this->data+13*this->height*x+y*13))[0] = (uint32_t)x;
+            ((uint32_t*)(this->data+13*this->height*x+y*13))[1] = (uint32_t)y;
+            uint8_t* bs = (uint8_t*) &((uint32_t*)(this->data+13*this->height*x+y*13))[2];
+            bs[0] = (uint8_t) this->grid[std::tuple<int,int>(x,y)].north;
+            bs[1] = (uint8_t) this->grid[std::tuple<int,int>(x,y)].east;
+            bs[2] = (uint8_t) this->grid[std::tuple<int,int>(x,y)].south;
+            bs[3] = (uint8_t) this->grid[std::tuple<int,int>(x,y)].west;
+            bs[4] = (uint8_t) this->grid[std::tuple<int,int>(x,y)].final;
         }
     }
 }

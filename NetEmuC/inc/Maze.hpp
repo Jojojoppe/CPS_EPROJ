@@ -14,6 +14,9 @@ class Maze{
         int width, height;
         std::map<std::tuple<int,int>, Cell> grid;
 
+        uint8_t * data;
+        size_t dataLen;
+
         Maze(int width, int height);
         ~Maze();
         void generate();
