@@ -8,8 +8,8 @@ from enum import Enum
 
 
 base_speed = 150
-kp = 120
-turn_angle = 85
+kp = 150
+turn_angle = 80
 compass = Direction()
 
 
@@ -78,7 +78,7 @@ def around():
     gopigo.set_left_speed(250)
     gopigo.set_right_speed(250)
     gopigo.left_rot()
-    time.sleep(1.65)
+    time.sleep(2)
     while True:
         gopigo.stop()
         time.sleep(0.2)
@@ -89,14 +89,14 @@ def around():
         gopigo.set_right_speed(250)
         gopigo.left_rot()
 
-        time.sleep(0.8)
+        time.sleep(0.5)
 
 
 def do_turn(d):
     global turn_angle, compass
 
-    gopigo.set_left_speed(250)
-    gopigo.set_right_speed(250)
+    gopigo.set_left_speed(210)
+    gopigo.set_right_speed(210)
     time.sleep(0.1)
 
     compass.turn_c(d)
@@ -196,11 +196,13 @@ def main():
     while True:
 
         (marker, t) = aruco.get_result()
+        print(state)
+
         state = change_state(marker, t)
 
         if state == State.DRIVE:
             drive_forwards(t)
-            pass
+            continue
 
         elif state == State.STOP:
             gopigo.stop()

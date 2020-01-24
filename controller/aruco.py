@@ -15,7 +15,7 @@ camera.resolution = (x_res, 240)
 camera.framerate = 32
 camera.rotation = 180
 rawCapture = PiRGBArray(camera, size=(320, 240))
-six_by_six = True
+six_by_six = False
 avg = []
 
 
@@ -88,7 +88,7 @@ def main():
 
         # Exponential moving average filter
         else:
-            filtered = 0.5*middle + 0.5*filtered
+            filtered = 0.4*middle + 0.6*filtered
 
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
