@@ -256,16 +256,19 @@ int main(int argc, char ** argv){
     pthread_create(&t_gui, NULL, GUI, win);
 
     // Creating socket
+    long host = cfg.GetInteger("network", "host", 0);
+    long port = cfg.GetInteger("network", "port", 8080);
+    long maxcon = cfg.GetInteger("network", "maxcon", 10);
     int opt = 1;
     struct sockaddr_in address;
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
     // Set socket options and bind socket
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(8080);
+    address.sin_addr.s_addr = host;
+    address.sin_port = htons((int)port);
     bind(sock, (struct sockaddr*)&address, sizeof(address));
-    listen(sock, 10);
+    listen(sock, (int)maxcon);
 
     // Listen loop
     std::vector<pthread_t> threads;
