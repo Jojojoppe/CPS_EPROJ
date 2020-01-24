@@ -116,8 +116,23 @@ void * GUI(void * params){
             // Draw RSSI lines
             float dist = c->calculateDistance(noiseFloor);
             uint32_t radius = (uint32_t)(16*dist);
-            SDL_SetRenderDrawColor(rend, 0, 0, 255, SDL_ALPHA_OPAQUE);
+            if(c->sent){
+                SDL_SetRenderDrawColor(rend, 255, 0, 0, SDL_ALPHA_OPAQUE);
+            }else{
+                SDL_SetRenderDrawColor(rend, 0, 0, 255, SDL_ALPHA_OPAQUE);
+            }
+            c->sent = false;
             DrawCircle(rend, 16+c->x*16+8, 16+c->y*16+8, radius);
+
+            // Draw lines of sent packets
+            SDL_SetRenderDrawColor(rend, 0, 0, 0, SDL_ALPHA_OPAQUE);
+            for(int id : c->sentToList){
+                if(clients[id]==NULL) continue;
+                SDL_RenderDrawLine(rend, 16+c->x*16+8, 16+c->y*16+8, 
+                    16+clients[id]->x*16+8, 16+clients[id]->y*16+8);
+            }
+
+            c->sentToList.clear();
         }
         m_clients.unlock();
 

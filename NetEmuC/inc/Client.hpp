@@ -18,6 +18,9 @@ class Client{
         float txp, x, y;
         float L;            // Loss (TXP*FSPL*Dt*Dr*lambda^2/39.48)
 
+        bool sent;
+        std::vector<int> sentToList;
+
         Client(int socket, std::vector<Client*> * clients, int id, std::mutex * m_clients);
         ~Client();
 

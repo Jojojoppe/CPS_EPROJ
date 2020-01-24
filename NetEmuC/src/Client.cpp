@@ -49,6 +49,7 @@ void Client::recv(uint8_t * data, uint32_t length){
         // DATA MESSAGE
         for(int i=0; i<this->clients->size(); i++){
             Client * c = (*(this->clients))[i];
+            this->sent = true;
             if(c!=NULL && c->id!=this->id){
                 // Try to send to client. Get distance between client and self
                 float dist = sqrt(pow(c->x-this->x, 2) + pow(c->y-this->y, 2));
@@ -58,6 +59,7 @@ void Client::recv(uint8_t * data, uint32_t length){
                     // Set RSSI in packet
                     data[1] = (uint8_t)RSSI;
                     this->send_to(data, length, c->id);
+                    this->sentToList.push_back(c->id);
                 }
             }
         }
