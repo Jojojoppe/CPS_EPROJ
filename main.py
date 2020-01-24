@@ -1,4 +1,4 @@
-import gopigo
+# import gopigo
 import random
 import time
 import controller.aruco as aruco
@@ -14,17 +14,17 @@ compass = Direction()
 
 
 
-def get_control_out(p0):
-    # P controller
-    # P_out = P0 + Kp * e
-    # Per wheel assume that P0 is a constant for driving spesified in this file
+# def get_control_out(p0):
+#     # P controller
+#     # P_out = P0 + Kp * e
+#     # Per wheel assume that P0 is a constant for driving spesified in this file
 
-    global base_speed
-    error = p0 - 0.5 # Deviation from middle
+#     global base_speed
+#     error = p0 - 0.5 # Deviation from middle
     
-    left  = base_speed + kp * error
-    right = base_speed - kp * error
-    return left, right
+#     left  = base_speed + kp * error
+#     right = base_speed - kp * error
+#     return left, right
 
 
 def drive_forwards(target):
@@ -38,6 +38,7 @@ def drive_forwards(target):
 """
 def rec(data:bytes, rssi:int):
     print(rssi, data)
+    algoInstance.recv(data, rssi)
 
 
 """Get information of net position and update the network emulator
@@ -53,6 +54,7 @@ def newPosition(markerID:int):
     y = (markerID//16)&0x0f
     info = network.maze[(x,y)]
     network.position(float(x), float(y))
+    algoInstance.newPos((x, y), info)
     return info
 
     if markerID==3:
@@ -227,7 +229,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-        gopigo.stop()
+        # gopigo.stop()
     except KeyboardInterrupt:
         gopigo.stop()
         aruco.stop() 

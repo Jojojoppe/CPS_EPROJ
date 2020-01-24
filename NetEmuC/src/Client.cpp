@@ -38,7 +38,6 @@ void Client::send_to(uint8_t * data, uint32_t length, int id){
 void Client::recv(uint8_t * data, uint32_t length){
     if(length==0) return;
     uint8_t type = data[0];
-    hexdump(data, length);
     if(type==1){
         // CONTROL MESSAGE
         float * fdata = (float*) (&data[1]);
