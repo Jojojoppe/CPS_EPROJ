@@ -21,6 +21,8 @@ BACK = 2
 LEFT = 3
 STOP = 4
 
+TTL = 20
+
 """Algorithm class
 """
 
@@ -163,6 +165,8 @@ class Algorithm:
 
         # Other bots
         self.otherPositions = {}
+        self.otherNextPositions = {}
+        self.otherPositionTTL = {}
 
         # Algo parameters
         self.amountInSwarm = 2
@@ -187,6 +191,8 @@ class Algorithm:
         self.updateMazeMemory = []
         self.updateRouteToSelf = []
         self.updatejunctions = []
+        self.updateOtherPositions = []
+        self.updateOtherNextPositions = []
         self.mayUpdate = False
         self.mayGoToExit = False
 
@@ -218,10 +224,9 @@ class Algorithm:
 
         self.sync = True
 
-
-
         # Update ID
-        self.otherPositions[otherID] = otherPosition
+        self.updateOtherPositions.append((otherID,otherPosition))
+        self.updateOtherNextPositions.append((otherID,otherNextPosition))
 
         # Update maze memory
         for k, v in otherMazeMemory.items():
@@ -289,9 +294,15 @@ class Algorithm:
         self.updateRouteToSelf.clear()
         # Update unexplored junctions
         for upd in self.updatejunctions:
-
             self.junctions[upd[0]] = upd[1]
         self.updatejunctions.clear()
+        for upd in self.updateOtherPositions:
+            self.otherPositions[upd[0]] = upd[1]
+            self.otherPositionTTL[upd[0]] = TTL
+        self.updateOtherPositions.clear()
+        for upd in self.updateOtherNextPositions:
+            self.otherNextPositions[upd[0]] = upd[1]
+        self.updateOtherNextPositions.clear()
 
         if self.mayGoToExit:
             self.solvingState = self.SolvingStates.GOTOEXIT
@@ -309,6 +320,13 @@ class Algorithm:
             self.network.send(pickle.dumps(
                 [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
+
+        for k,v in self.otherPositionTTL.items()``:
+            if v==0 and k in self.otherPositions:
+                self.otherPositions.pop(k)
+                self.otherNextPositions.pop(k)
+            else:
+                self.otherPositionTTL[k] = v-1
 
     """ Called when aruco marker is detected
     position: (x,y)
@@ -378,7 +396,7 @@ class Algorithm:
                             self.junctions[self.position] = False
                 if newDirection is not None:
                     self.nextPosition = self.getNextPosition(self.facingDirection)
-                    return newDirection
+                    return self.mayGoToNextPoint(newDirection)
 
                 # No possible direction
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
@@ -396,7 +414,7 @@ class Algorithm:
                 else:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
-                    return self.Abs2Rel(newdir)
+                    return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
                 self.updateFromBuffers()
@@ -420,7 +438,7 @@ class Algorithm:
                     else:
                         self.facingDirection = newdir
                         self.nextPosition = self.getNextPosition(newdir)
-                        return self.Abs2Rel(newdir)
+                        return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTOEXIT:
                 self.updateFromBuffers()
@@ -433,7 +451,7 @@ class Algorithm:
                 else:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
-                    return self.Abs2Rel(newdir)
+                    return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             time.sleep(0)
 
@@ -530,6 +548,15 @@ class Algorithm:
 
         return routeFromPoint
 
+
+    def mayGoToNextPoint(self, newDir):
+        for k,v in self.otherPositions.items():
+            if self.nextPosition == v:
+                return STOP
+        for k,v in self.otherNextPositions.items():
+            if self.nextPosition == v:
+                return STOP
+        return newDir
 
 if __name__ == "__main__":
     pass
