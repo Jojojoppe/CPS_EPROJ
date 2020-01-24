@@ -8,12 +8,17 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import sys
 
+# Low res to get more frames, o(n) for pixel size
 camera = PiCamera()
 x_res = 320
 camera.resolution = (x_res, 240)
 camera.framerate = 32
 camera.rotation = 180
 rawCapture = PiRGBArray(camera, size=(320, 240))
+six_by_six = True
+avg = []
+
+
 
 # Allow the camera to warmup
 time.sleep(0.1)
@@ -39,13 +44,18 @@ def main():
     global aruco_and_middle, stop_pls, filtered
 
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        b = time.time()
+
         image = frame.array
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
+        if six_by_six:
+            aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
+        else:
+            aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_1000)
         parameters = aruco.DetectorParameters_create()
-        corners,ids,rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+        corners,ids,rejectedImgPoints = aruco.detectMarkers(image, aruco_dict, parameters=parameters)
 
-        marker = aruco.drawDetectedMarkers(gray, corners)
+        # marker = aruco.drawDetectedMarkers(gray, corners)
 
         erdil = cv2.erode(gray, kernel, iterations=5)
         erdil = cv2.dilate(erdil, kernel, iterations=5)
@@ -69,7 +79,7 @@ def main():
         
         if (len(middles) > 0):
             middle = sum(middles)/len(middles)
-        else :
+        else:
             middle = -1
 
         
@@ -83,18 +93,23 @@ def main():
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
         if ids is not None:
-            print(ids)
+            e = time.time()
+
+            avg.append(e-b)
+
+            # print(ids)
 
         # print(aruco_and_middle)
 
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
-        cv2.imshow("Marker", marker)
+        # cv2.imshow("Marker", marker)
         cv2.imshow("Result", res)
 
         key = cv2.waitKey(1) & 0xFF
         rawCapture.truncate(0)
         if key == ord("q"):
+            print("Average aruco detection:", sum(avg)/len(avg))
             break
 
 
@@ -109,4 +124,5 @@ if __name__ == "__main__":
     try:
         pass
     except KeyboardInterrupt:
+        
         stop()
