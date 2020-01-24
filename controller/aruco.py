@@ -15,7 +15,7 @@ camera.resolution = (x_res, 240)
 camera.framerate = 32
 camera.rotation = 180
 rawCapture = PiRGBArray(camera, size=(320, 240))
-six_by_six = False
+six_by_six = True
 avg = []
 
 
@@ -43,17 +43,19 @@ def concat(raw):
 def main():
     global aruco_and_middle, stop_pls, filtered
 
+    if six_by_six:
+        aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
+    else:
+        aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_1000)
+    parameters = aruco.DetectorParameters_create()
+
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
         b = time.time()
 
         image = frame.array
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        if six_by_six:
-            aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_1000)
-        else:
-            aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_1000)
-        parameters = aruco.DetectorParameters_create()
-        corners,ids,rejectedImgPoints = aruco.detectMarkers(image, aruco_dict, parameters=parameters)
+
+        corners,ids,rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
         # marker = aruco.drawDetectedMarkers(gray, corners)
 
@@ -88,7 +90,7 @@ def main():
 
         # Exponential moving average filter
         else:
-            filtered = 0.4*middle + 0.6*filtered
+            filtered = 0.5*middle + 0.5*filtered
 
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
@@ -98,8 +100,6 @@ def main():
             avg.append(e-b)
 
             # print(ids)
-
-        # print(aruco_and_middle)
 
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)

@@ -8,7 +8,7 @@ from enum import Enum
 
 
 base_speed = 150
-kp = 150
+kp = 120
 turn_angle = 80
 compass = Direction()
 
@@ -61,6 +61,18 @@ def newPosition(markerID:int):
 
 
 def get_turn(m):
+    # Rescue
+
+    if m == None:
+        print("None m")
+        return "straight"
+
+    # if int(m) == 4:
+    #     return "stop"
+
+
+    if int(m) == 300:
+        return "straight"
     # m_info = newPosition(m)
     # # (north, east, south, west, final_pos)
     # # TODO Add algorithm decision making here
@@ -78,7 +90,7 @@ def around():
     gopigo.set_left_speed(250)
     gopigo.set_right_speed(250)
     gopigo.left_rot()
-    time.sleep(2)
+    time.sleep(1.45)
     while True:
         gopigo.stop()
         time.sleep(0.2)
@@ -100,7 +112,6 @@ def do_turn(d):
     time.sleep(0.1)
 
     compass.turn_c(d)
-    print(compass.get_direction())
     if d == "left":
         gopigo.turn_left_wait_for_completion(turn_angle)
     elif d == "around":
@@ -130,7 +141,11 @@ state = State.DRIVE
 state_timer = time.time()
 prev_marker = -1
 
-def change_state(m, t):
+def change_state(m_, t):
+    if m_ is not None:
+        m = int(m_)
+    else:
+        m = None
     global state, prev_marker, state_timer
     new_state = State.STOP
 
@@ -152,6 +167,8 @@ def change_state(m, t):
                 new_state = State.TURN_RIGHT
             elif direction == "around":
                 new_state = State.TURN_AROUND
+            elif direction == "stop":
+                new_state = State.STOP
             else: 
                 new_state = State.DRIVE
         else:
@@ -183,6 +200,17 @@ def change_state(m, t):
     return new_state
 
 
+def rescue():
+    # This is only called when gopigo stops driving for no reason
+    # The only way to fix it is to stop it and then restart
+    gopigo.stop()
+    print("Rescue")
+    time.sleep(1)
+    gopigo.set_left_speed(130)
+    gopigo.set_right_speed(130)
+    gopigo.fwd()
+    time.sleep(0.2)
+
 def main():
     global network, state, prev_marker
     # position = random.randint(0,15), random.randint(0,15)
@@ -191,18 +219,29 @@ def main():
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
     gopigo.fwd()
+
+    save_timer = time.time()
+    save_enc = (0, 0)
     
-    print(compass.get_direction())
     while True:
 
         (marker, t) = aruco.get_result()
-        print(state)
+
+        # GoPiGo is not very stable, this block is just to make it stable
+        if save_timer + 2 < time.time():
+            try:
+                new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
+            except TypeError:
+                print("GoPiGo breaks when you enc read sometimes just restart the main, the state should be fine")
+                main()
+
+            if new_enc == save_enc and state == State.DRIVE:
+                rescue()
 
         state = change_state(marker, t)
 
         if state == State.DRIVE:
             drive_forwards(t)
-            continue
 
         elif state == State.STOP:
             gopigo.stop()
