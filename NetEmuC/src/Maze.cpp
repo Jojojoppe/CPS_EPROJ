@@ -14,9 +14,13 @@ Maze::Maze(int width, int height){
             this->grid[std::tuple<int,int>(w,h)] = c;
         }
     }
+    this->data = NULL;
 }
 
 Maze::~Maze(){
+    if(this->data==NULL){
+        return;
+    }
     free(this->data);
 }
 
