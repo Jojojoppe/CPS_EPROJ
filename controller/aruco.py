@@ -15,7 +15,7 @@ camera.resolution = (x_res, 240)
 camera.framerate = 32
 camera.rotation = 180
 rawCapture = PiRGBArray(camera, size=(320, 240))
-six_by_six = True
+six_by_six = False
 avg = []
 
 
