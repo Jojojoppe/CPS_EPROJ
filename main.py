@@ -13,7 +13,8 @@ kp = 120
 turn_angle = 80                                                                                 
 compass = Direction()                                                                           
 
-algoInstance = None                                                                             
+algoInstance = None            
+network = None                                                                 
 
 
 def get_control_out(p0):                                                                        
@@ -217,22 +218,24 @@ def rescue():
 def main():                                                                                     
     global network, state, prev_marker, algoInstance                                            
 
-    # Setup network                                                                             
-    # Read ip address
-    ip = "localhost"
-    with open("server.ip") as f:
-        ip = f.read()
-    # TODO STARTING POSITION                                                                    
-    x,y = 0,0                                                                                   
-    network = netemuclient.NetEmuClient(rec, ip, 8080)                                 
-    network.start()                                                                             
-    network.waitForMaze()                                                                       
-    network.position(x,y)                                                                       
-    network.txpower(0.02)                                                                       
+    if network is None:
+        # Setup network                                                                             
+        # Read ip address
+        ip = "localhost"
+        with open("server.ip") as f:
+            ip = f.read()
+        # TODO STARTING POSITION                                                                    
+        x,y = 0,0                                                                                   
+        network = netemuclient.NetEmuClient(rec, ip, 8080)                                 
+        network.start()                                                                             
+        network.waitForMaze()                                                                       
+        network.position(x,y)                                                                       
+        network.txpower(0.02)                                                                       
 
-    # Startup algorithm                                                                         
-    algoInstance = algo.Algorithm(network, (x,y))                                               
-    newPosition(x+16*y)                                                                         
+    if algoInstance is None:
+        # Startup algorithm                                                                         
+        algoInstance = algo.Algorithm(network, (x,y))                                               
+        newPosition(x+16*y)                                                                         
 
     time.sleep(1)                                                                               
     gopigo.set_left_speed(0)                                                                    
