@@ -10,7 +10,7 @@ from controller.space import Direction
 
 base_speed = 150                                                                                
 kp = 120                                                                                        
-turn_angle = 80                                                                                 
+turn_angle = 75                                                                                 
 compass = Direction()                                                                           
 
 algoInstance = None            
@@ -88,7 +88,7 @@ def around():
     gopigo.set_left_speed(250)                                                                  
     gopigo.set_right_speed(250)                                                                 
     gopigo.left_rot()                                                                           
-    time.sleep(1.45)                                                                            
+    time.sleep(2)                                                                            
     while True:                                                                                 
         gopigo.stop()                                                                           
         time.sleep(0.2)                                                                         
@@ -257,12 +257,14 @@ def main():
                 new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
             except TypeError:
                 print("GoPiGo breaks when you enc read sometimes just restart the main, the state should be fine")
-                main()
+                continue
 
             if new_enc == save_enc and state == State.DRIVE:
                 rescue()
 
         state = change_state(marker, t)
+
+        print(state, "facing:", compass)
 
         if state == State.DRIVE:
             drive_forwards(t)
