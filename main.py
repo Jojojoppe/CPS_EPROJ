@@ -218,9 +218,13 @@ def main():
     global network, state, prev_marker, algoInstance                                            
 
     # Setup network                                                                             
+    # Read ip address
+    ip = "localhost"
+    with open("server.ip") as f:
+        ip = f.read()
     # TODO STARTING POSITION                                                                    
     x,y = 4,0                                                                                   
-    network = netemuclient.NetEmuClient(rec, "localhost", 8080)                                 
+    network = netemuclient.NetEmuClient(rec, ip, 8080)                                 
     network.start()                                                                             
     network.waitForMaze()                                                                       
     network.position(x,y)                                                                       
