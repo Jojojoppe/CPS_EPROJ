@@ -405,6 +405,8 @@ class Algorithm:
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
 
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
+                print("new direction gotomeetingpoint: ", newdir)
+                # FIXME HEEEEEEEEEEEEEEERRRRRRREEEEEEE AT END RETURNS 0 but should be 2. newdir is correct but probably abs2rel does not work properly
                 # for j in self.junctions:
                 #     if not self.junctions[j]:
                 #         newdir = self.getNextDirectionToPoint(j)
@@ -415,6 +417,7 @@ class Algorithm:
                 else:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
+                    print("Relative: ", self.Abs2Rel(newdir))
                     return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
