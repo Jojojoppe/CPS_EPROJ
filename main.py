@@ -1,9 +1,9 @@
-import gopigo
+# import gopigo
 import random
 import time
 import controller.aruco as aruco
 from controller.space import Direction
-import NetworkEmulator.netemuclient as netemuclient
+import NetEmuC.python.netemuclient as netemuclient
 from enum import Enum
 
 
@@ -14,17 +14,17 @@ compass = Direction()
 
 
 
-def get_control_out(p0):
-    # P controller
-    # P_out = P0 + Kp * e
-    # Per wheel assume that P0 is a constant for driving spesified in this file
+# def get_control_out(p0):
+#     # P controller
+#     # P_out = P0 + Kp * e
+#     # Per wheel assume that P0 is a constant for driving spesified in this file
 
-    global base_speed
-    error = p0 - 0.5 # Deviation from middle
+#     global base_speed
+#     error = p0 - 0.5 # Deviation from middle
     
-    left  = base_speed + kp * error
-    right = base_speed - kp * error
-    return left, right
+#     left  = base_speed + kp * error
+#     right = base_speed - kp * error
+#     return left, right
 
 
 def drive_forwards(target):
@@ -36,8 +36,9 @@ def drive_forwards(target):
 
 """Data received from network
 """
-def recv(data:bytes, rssi:int):
+def rec(data:bytes, rssi:int):
     print(rssi, data)
+    algoInstance.recv(data, rssi)
 
 
 """Get information of net position and update the network emulator
@@ -46,12 +47,16 @@ Returns tupe with:
     final: True if exit of maze
 """
 def newPosition(markerID:int):
-    # global network
-    # x = markerID&0x0f
-    # y = (markerID//16)&0x0f
-    # info = network.maze.getInfo((x, y))
-    # network.position(float(x), float(y))
-    # return info
+    global network
+    # NEW NETWORK THINGS
+    # TODO this is for markers of size 6, not for 4
+    x = markerID&0x0f
+    y = (markerID//16)&0x0f
+    info = network.maze[(x,y)]
+    network.position(float(x), float(y))
+    algoInstance.newPos((x, y), info)
+    return info
+
     if markerID==3:
         return (True, True, False, True, False)
     elif markerID==4:
@@ -213,8 +218,12 @@ def rescue():
 
 def main():
     global network, state, prev_marker
-    # position = random.randint(0,15), random.randint(0,15)
-    # network = netemuclient.NetEmuClient.connect(recv, position)
+
+    position = 8,0
+    network = netemuclient.NetEmuClient(rec, "localhost", 8080)
+    network.position(*position)
+    network.txpower(0.04)
+
     time.sleep(1)
     gopigo.set_left_speed(0)
     gopigo.set_right_speed(0)
@@ -261,7 +270,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-        gopigo.stop()
+        # gopigo.stop()
     except KeyboardInterrupt:
         gopigo.stop()
         aruco.stop() 
