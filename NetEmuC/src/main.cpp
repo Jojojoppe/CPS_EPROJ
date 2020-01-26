@@ -16,12 +16,13 @@
 #include <sys/types.h>
 #include <netinet/tcp.h>
 #include <stdint.h>
+#include <tuple>
 
 #include <INIReader.hpp>
 #include <Maze.hpp>
 #include <Client.hpp>
 
-Maze maze(16,16);
+Maze maze(16,16, std::tuple<int,int>(15,15));
 std::mutex m_maze;
 
 bool running;
@@ -243,10 +244,12 @@ int main(int argc, char ** argv){
     bool load = cfg.GetBoolean("maze", "load", false);
     std::string loadfile = cfg.GetString("maze", "loadfile", "test.maze");
     std::string savefile = cfg.GetString("maze", "savefile", "test.maze");
+    long exit_x = cfg.GetInteger("maze", "exit_x", 15);
+    long exit_y = cfg.GetInteger("maze", "exit_y", 15);
 
     // Create a maze
     m_maze.lock();
-    maze = Maze(width, height);
+    maze = Maze(width, height, std::tuple<int,int>((int)exit_x, (int)exit_y));
     maze.generate();
     if(load){
         FILE * fload = fopen(loadfile.c_str(), "rb");

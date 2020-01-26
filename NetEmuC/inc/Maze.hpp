@@ -16,8 +16,9 @@ class Maze{
 
         uint8_t * data;
         size_t dataLen;
+        std::tuple<int,int> exit;
 
-        Maze(int width, int height);
+        Maze(int width, int height, std::tuple<int,int> exit);
         ~Maze();
         void generate();
         std::vector<std::tuple<int,int>> get_neighbours(std::tuple<int,int> pos);

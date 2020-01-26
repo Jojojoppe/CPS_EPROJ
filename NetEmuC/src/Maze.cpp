@@ -3,9 +3,10 @@
 #include <tuple>
 #include <time.h>
 
-Maze::Maze(int width, int height){
+Maze::Maze(int width, int height, std::tuple<int,int> exit){
     this->width = width;
     this->height = height;
+    this->exit = exit;
     
     // Fill the grid
     for(int h=0; h<height; h++){
@@ -62,8 +63,9 @@ void Maze::generate(){
         }
     }
 
-    // Exit on 15,15
-    this->grid[std::tuple<int,int>(15,15)].final = true;
+    // Exit
+    this->grid[this->exit].final = true;
+    printf("Place exit on %d,%d\r\n", std::get<0>(this->exit), std::get<1>(this->exit));
 
     // Fill maze data
     this->dataLen = this->width*this->height*13;
