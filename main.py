@@ -139,7 +139,8 @@ state = State.DRIVE
 state_timer = time.time()                                                                       
 prev_marker = -1                                                                                
 
-def change_state(m_, t):                                                                        
+def change_state(m_, t):
+    direction = None                                                                        
     if m_ is not None:                                                                          
         m = int(m_)                                                                             
     else:                                                                                       
@@ -173,8 +174,9 @@ def change_state(m_, t):
                 new_state = State.TURN_AROUND                                                   
             elif direction == algo.STOP:                                                        
                 new_state = State.STOP                                                          
-            else:                                                                               
-                new_state = State.DRIVE                                                         
+            else:       
+                print("Broken direction:", direction)                                                                        
+                new_state = State.STOP                                                         
         else:                                                                                   
             new_state = State.STOP                                                              
 
@@ -199,7 +201,8 @@ def change_state(m_, t):
     if new_state != state:                                                                      
         if state == State.STOP and new_state == State.DRIVE:                                    
             gopigo.fwd()                                                                        
-        state_timer = time.time()                                                               
+        state_timer = time.time()
+        print(state, "facing:", compass.direction, "command I got:", direction)                                                               
 
     return new_state                                                                            
 
@@ -264,7 +267,7 @@ def main():
 
         state = change_state(marker, t)
 
-        print(state, "facing:", compass)
+        
 
         if state == State.DRIVE:
             drive_forwards(t)
