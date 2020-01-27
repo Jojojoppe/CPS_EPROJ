@@ -244,7 +244,7 @@ def main():
     if algoInstance is None:
         # Startup algorithm                                                                         
         algoInstance = algo.Algorithm(network, (x,y))                                               
-        newPosition(x+16*y)                                                                         
+        #newPosition(x+16*y)                                                                         
 
     time.sleep(1)                                                                               
     gopigo.set_left_speed(0)                                                                    

@@ -151,6 +151,7 @@ class Algorithm:
 
         self.ID = network.ip + str(network.port)
 
+        self.ignore = False
 
         self.update = False
         self.sync = False
@@ -335,6 +336,12 @@ class Algorithm:
     """
 
     def newPos(self, position, info):
+        if position == self.prevPosition:
+            print("IGNORING pos:", position, " prevPos:", self.prevPosition)
+            self.ignore = True
+            return
+        else:
+            self.ignore = False
         self.prevPosition = self.position  # Save previous position
         self.position = position  # Update position
         self.positionInfo = info
@@ -357,6 +364,10 @@ class Algorithm:
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
     def getDirection(self):
+
+        if self.ignore:
+            self.ignore = False
+            return STRAIGHT
 
         other = (-1, -1)
         for c in self.otherPositions:
@@ -443,6 +454,8 @@ class Algorithm:
                     else:
                         self.facingDirection = newdir
                         self.nextPosition = self.getNextPosition(newdir)
+                        # FIXME
+
                         print("GotoOpenPath return:", newdir)
                         return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
