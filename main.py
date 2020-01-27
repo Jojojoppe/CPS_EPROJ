@@ -234,7 +234,7 @@ def main():
         with open("server.ip") as f:
             ip = f.read()
         # TODO STARTING POSITION                                                                    
-        x,y = 0,0                                                                                   
+        x,y = 1,0                                                                                   
         network = netemuclient.NetEmuClient(rec, ip, 8080)                                 
         network.start()                                                                             
         network.waitForMaze()                                                                       

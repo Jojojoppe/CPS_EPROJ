@@ -317,7 +317,7 @@ class Algorithm:
         self.updateFromBuffers()
 
         # Broadcast maze, routeToSeld and unexploredJunction
-        if self.counter % 5 == 0:
+        if self.counter % 10 == 0:
             self.network.send(pickle.dumps(
                 [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
@@ -418,6 +418,7 @@ class Algorithm:
                     relDirection = self.Abs2Rel(newdir)
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
+                    print("GotMeetingPoint return:", newdir)
                     return self.mayGoToNextPoint(relDirection)
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
@@ -442,6 +443,7 @@ class Algorithm:
                     else:
                         self.facingDirection = newdir
                         self.nextPosition = self.getNextPosition(newdir)
+                        print("GotoOpenPath return:", newdir)
                         return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTOEXIT:
@@ -455,6 +457,7 @@ class Algorithm:
                 else:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
+                    print("GotoExit return:", newdir)
                     return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTORAND:
@@ -470,6 +473,7 @@ class Algorithm:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
                     self.solvingState = self.SolvingStates.EXPLORE
+                    print("GotoRand return:", newdir)
                     return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             time.sleep(0)
