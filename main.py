@@ -8,7 +8,7 @@ import gopigo
 import NetEmuC.python.netemuclient as netemuclient                                              
 from controller.space import Direction                                                          
 
-base_speed = 150                                                                                
+base_speed = 140                                                                                
 kp = 100                                                                                        
 turn_angle = 75                                                                                 
 compass = Direction()                                                                           
@@ -116,8 +116,13 @@ def do_turn(d):
         around()                                                                                
 
         gopigo.stop()                                                                           
-    else:                                                                                       
-        gopigo.turn_right_wait_for_completion(turn_angle)                                       
+    else:
+        try:
+            gopigo.turn_right_wait_for_completion(turn_angle)
+        except TypeError:
+            print("Second TypeError")
+            do_turn(d)                                                                                       
+        
     time.sleep(0.1)                                                                             
     gopigo.fwd()                                                                                
     drive_forwards(0.5)                                                                         
@@ -204,7 +209,6 @@ def change_state(m_, t):
         if state == State.STOP and new_state == State.DRIVE:                                    
             gopigo.fwd()                                                                        
         state_timer = time.time()
-        print(state, "facing:", compass.direction, "command I got:", direction)                                                               
 
     return new_state                                                                            
 
@@ -262,7 +266,7 @@ def main():
                 new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
             except TypeError:
                 print("GoPiGo breaks when you enc read sometimes just restart the main, the state should be fine")
-                continue
+                main()
 
             if new_enc == save_enc and state == State.DRIVE:
                 rescue()
