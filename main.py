@@ -99,7 +99,7 @@ def around():
         gopigo.set_right_speed(250)                                                             
         gopigo.left_rot()                                                                       
 
-        time.sleep(0.5)                                                                         
+        time.sleep(0.2)                                                                         
 
 
 def do_turn(d):                                                                                 
