@@ -300,6 +300,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         gopigo.stop()
         aruco.stop() 
-    except Exception:
+    except Exception as e:
+        print(str(e))
         print("LOLOLOLOLOLOL")
         main()
