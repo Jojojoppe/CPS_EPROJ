@@ -418,6 +418,7 @@ class Algorithm:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
                     print("Relative: ", self.Abs2Rel(newdir))
+                    print("Absolute:", self.facingDirection)
                     return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
@@ -479,7 +480,13 @@ class Algorithm:
     """
 
     def Abs2Rel(self, newdir):
-        return (newdir - self.facingDirection) % 4
+        d = newdir - self.facingDirection
+        while d>4:
+            d -= 4
+        while d<0:
+            d += 4
+        #return (newdir - self.facingDirection) % 4
+        return d
 
     """Convert relative direction to absolute
     Returns absolute direction
