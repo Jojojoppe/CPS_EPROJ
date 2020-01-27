@@ -301,4 +301,5 @@ if __name__ == "__main__":
         gopigo.stop()
         aruco.stop() 
     except Exception:
+        print("LOLOLOLOLOLOL")
         main()
