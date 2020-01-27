@@ -9,7 +9,7 @@ import NetEmuC.python.netemuclient as netemuclient
 from controller.space import Direction                                                          
 
 base_speed = 150                                                                                
-kp = 120                                                                                        
+kp = 100                                                                                        
 turn_angle = 75                                                                                 
 compass = Direction()                                                                           
 
