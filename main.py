@@ -88,7 +88,7 @@ def around():
     gopigo.set_left_speed(250)                                                                  
     gopigo.set_right_speed(250)                                                                 
     gopigo.left_rot()                                                                           
-    time.sleep(2)                                                                            
+    time.sleep(1.60)                                                                            
     while True:                                                                                 
         gopigo.stop()                                                                           
         time.sleep(0.2)                                                                         
@@ -173,7 +173,9 @@ def change_state(m_, t):
             elif direction == algo.BACK:                                                        
                 new_state = State.TURN_AROUND                                                   
             elif direction == algo.STOP:                                                        
-                new_state = State.STOP                                                          
+                new_state = State.STOP
+            elif direction == algo.STRAIGHT:
+                new_state = State.DRIVE
             else:       
                 print("Broken direction:", direction)                                                                        
                 new_state = State.STOP                                                         
