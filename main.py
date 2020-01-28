@@ -340,6 +340,7 @@ if __name__ == "__main__":
     while True:
         try:
             main()
+            gopigo.stop()
         except KeyboardInterrupt:
             gopigo.stop()
             break 
