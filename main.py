@@ -1,5 +1,7 @@
 import random                                                                                   
-import time                                                                                     
+import time                      
+import pickle                                                               
+import sys
 from enum import Enum                                                                           
 
 import algorithm.algo as algo                                                                   
@@ -50,7 +52,11 @@ Returns tupe with:
     final: True if exit of maze                                                                 
 """                                                                                             
 def newPosition(markerID:int):                                                                  
-    global network                                                                              
+    global network, algoInstance
+
+    with open("last_state.pickle", "wb") as f_pickle:
+        f_pickle.write(pickle.dumps(algoInstance))
+
     x = markerID&0x0f                                                                           
     y = (markerID//16)&0x0f                                                                     
     info = network.maze[(x,y)]                                                                  
@@ -239,12 +245,17 @@ def main():
         network.start()                                                                             
         network.waitForMaze()                                                                       
         network.position(x,y)                                                                       
-        network.txpower(0.02)                                                                       
+        network.txpower(0.02)    
 
     if algoInstance is None:
-        # Startup algorithm                                                                         
-        algoInstance = algo.Algorithm(network, (x,y))                                               
-        #newPosition(x+16*y)                                                                         
+        if len(sys.argv)>1:
+            with open("last_state.pickle", "rb") as f_pickle:
+                algoInstance = pickle.loads(f_pickle.read())
+                algoInstance.restoreState(network)
+        else:
+            # Startup algorithm                                                                         
+            algoInstance = algo.Algorithm(network, (x,y))                                               
+            #newPosition(x+16*y)                                                                         
 
     time.sleep(1)                                                                               
     gopigo.set_left_speed(0)                                                                    
