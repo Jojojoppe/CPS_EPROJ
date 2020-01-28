@@ -7,38 +7,46 @@ import time
 import threading
 import pygame
 
-
+# Constants for absolute direction
 NORTH = 0
 EAST = 1
 SOUTH = 2
 WEST = 3
 
+# Constants for relative direction
 STRAIGHT = 0
 RIGHT = 1
 BACK = 2
 LEFT = 3
 STOP = 4
 
+# Time to live for position of other bots
+# Stored position gets removed after TTL amount
+# of iterations
 TTL = 200
 
 """Algorithm class
 """
-
-
 class Algorithm:
-    class SolvingStates(enum.Enum):
-        EXPLORE = 0
-        GOTOMEETINGPOINT = 1
-        GOTOOPENPATH = 2
-        GOTOEXIT = 3
-        GOTORAND = 4
 
+    # Different states of the algorithm
+    class SolvingStates(enum.Enum):
+        EXPLORE = 0             # Exploring state   
+        GOTOMEETINGPOINT = 1    # Going back to meeting point
+        GOTOOPENPATH = 2        # Go to a junction with unexplored paths
+        GOTOEXIT = 3            # Drive towards the exit
+        GOTORAND = 4            # Collision: drive to a random junction for one move and try again
+
+    """ Debug GUI
+    Shows the internal memory of the algorithm
+    """
     def gui(self):
         pygame.init()
         fpsCam = pygame.time.Clock()
         gOffs, gGS = 16, 16
         window = pygame.display.set_mode((16 * gGS + 2 * gOffs, 16 * gGS + 2 * gOffs), 0, 32)
 
+        # Gui loop
         while True:
             window.fill((220, 220, 220))
 
@@ -64,14 +72,16 @@ class Algorithm:
                 x,y = self.exitFound
                 pygame.draw.rect(window, (255, 255, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
+            # Draw next position
             if self.nextPosition is not None:
                 x,y = self.nextPosition
                 pygame.draw.rect(window, (255, 0, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+            # Draw previous position
             if self.prevPosition is not None:
                 x,y = self.prevPosition
                 pygame.draw.rect(window, (255, 127, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
-            # If there are other next potitions draw them
+            # If there are other's (next) potitions draw them
             if self.otherNextPositions is not None:
                 for k, p in self.otherNextPositions.items():
                     if p is None:
@@ -84,7 +94,6 @@ class Algorithm:
                         continue
                     x, y = p
                     pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
-
 
             # Draw route to self
             for k, v in self.routeToSelf.items():
@@ -159,22 +168,19 @@ class Algorithm:
             fpsCam.tick(15)
 
     """ Init function
+    Sets up algorithm
+    [network] reference to network layer
+    [position] starting position
     """
-
     def __init__(self, network, position):
         self.network = network
-
-        self.ID = network.ip + str(network.port)
-
-        self.ignore = False
-
+        self.ID = network.ip + str(network.port)        # ID is needed for other cars to store data
+        self.ignore = False                             # Markers may only be read once: ignore is set to True if a marker is read again
         self.update = False
         self.sync = False
         self.scount = 0
-
-        # Internal state variables
         self.position = position
-        self.justStarted = True
+        self.justStarted = True                         # It may only ignore markers when already driving, this prevents ignoring the first marker read
         self.prevPosition = None
         self.nextPosition = None
         self.positionInfo = (False, False, False, False, False)
@@ -207,49 +213,55 @@ class Algorithm:
         self.counter = 0
 
         # Update buffers
+        # At each algorithm tick (step()) the buffers are written to the internal state memory
         self.updateMazeMemory = []
         self.updateRouteToSelf = []
         self.updatejunctions = []
         self.updateOtherPositions = []
         self.updateOtherNextPositions = []
-        self.mayUpdate = False
-        self.mayGoToExit = False
+        self.mayUpdate = False                      # After receiving data the buffers may be updated
+        self.mayGoToExit = False                    # May only go to exit if synced with another bot
 
+        # Start the gui thread
         self.guiThread = threading.Thread(target=self.gui)
         self.guiThread.start()
 
-
+    """ Get object state
+    Used by pickle to pickle the object. The algo object
+    contains the network and a thread which are not serializable
+    so they must be deleted from the state before pickling
+    """
     def __getstate__(self):
-        # Copy the object's state from self.__dict__ which contains
-        # all our instance attributes. Always use the dict.copy()
-        # method to avoid modifying the original state.
         state = self.__dict__.copy()
-        # Remove the unpicklable entries.
         del state['network']
         del state['guiThread']
         return state
 
+    """ Set the object state
+    Used by pickle to store a pickled object. It sets the stored state
+    """
     def __setstate__(self, state):
-        # Restore instance attributes (i.e., filename and lineno).
         self.__dict__.update(state)
-        # Restore the previously opened file's state. To do so, we need to
-        # reopen it and read from it until the line count is restored.
 
+    """ Restart the algorithm
+    After unpickling the algorithm object the network must be set again
+    and the gui thread should be started
+    """
     def restoreState(self, network):
         self.network = network
         self.guiThread = threading.Thread(target=self.gui)
         self.guiThread.start()
 
-    # Return if the meeting point is explored
+    """ Return true if the meeting point is explored
+    """
     def checkMeetingPoint(self):
         return self.junctions[self.meetingPoint]
 
     """ Called when message is received
     Updates internal memory without changing it: pushes to internal buffer which is resolved by step()
     """
-
     def recv(self, data: bytes, rssi: int):
-
+        # Get all data from the packet
         self.mayUpdate = False
         msgData = pickle.loads(data)
         otherMazeMemory = msgData[0]
@@ -275,10 +287,7 @@ class Algorithm:
                 self.updateMazeMemory.append((k, v))
 
         # Update routeToSelf
-        # FIXME self.meetingpoint? Not the same as mine?
-        # FIXME self on meeting point?
         # Update complete routeToSelf map
-        #print("Update routeToSelf")
         for k, v in otherRouteToSelf.items():
             if k not in self.routeToSelf:
                 self.updateRouteToSelf.append((k, v))
@@ -292,6 +301,7 @@ class Algorithm:
                 uniqueRoute.append(p)
             else:
                 notUniqueRoute.append(p)
+        # If there is a unique route use it to update routeToSelf
         if len(uniqueRoute) > 0:
             for i in range(len(uniqueRoute) - 1):
                 p = uniqueRoute[-1 * i - 1]
@@ -302,7 +312,6 @@ class Algorithm:
             self.updateRouteToSelf.append((p, np))
 
         # Update junctions
-        #print("Update junctions")
         for k, v in otherjunctions.items():
             # If new junction
             if k not in self.junctions:
@@ -319,11 +328,9 @@ class Algorithm:
             self.exitFound = otherExitFound
 
         self.mayUpdate = True
-        #print("Done receiving")
 
-    """[summary]
+    """ Update the internal state memory from the buffers
     """
-
     def updateFromBuffers(self):
         if not self.mayUpdate:
             return
@@ -340,10 +347,10 @@ class Algorithm:
         for upd in self.updatejunctions:
             self.junctions[upd[0]] = upd[1]
         self.updatejunctions.clear()
-
+        # Update the other (next) positions
         for upd in self.updateOtherPositions:
             self.otherPositions[upd[0]] = upd[1]
-            self.otherPositionTTL[upd[0]] = TTL
+            self.otherPositionTTL[upd[0]] = TTL          # Reset the TTL
         self.updateOtherPositions.clear()
         for upd in self.updateOtherNextPositions:
             self.otherNextPositions[upd[0]] = upd[1]
@@ -352,9 +359,9 @@ class Algorithm:
         if self.mayGoToExit:
             self.solvingState = self.SolvingStates.GOTOEXIT
 
-    """ Called in main loop
+    """ Algorithm step
+    Called in main loop
     """
-
     def step(self):
         self.counter += 1
 
@@ -367,6 +374,7 @@ class Algorithm:
                 [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
 
+        # Decrease TTL of other positions
         for k,v in self.otherPositionTTL.items():
             if v==0 and k in self.otherPositions:
                 self.otherPositions.pop(k)
@@ -375,22 +383,19 @@ class Algorithm:
                 self.otherPositionTTL[k] = v-1
 
     """ Called when aruco marker is detected
-    position: (x,y)
-    info: (north, east, south, west, final) (ABSOLUTE), True is wall, False is opening
+    [position] new position in format (x,y)
+    [info] detected position information in format (north, east, south, west, final) (ABSOLUTE), True is wall, False is opening
     """
-
     def newPos(self, position, info):
-        print("newPos()", position, self.prevPosition)
-        # FIXME next test do not return
+        # Check if marker is read twice
         if position == self.position and not self.justStarted:
-            print("IGNORING pos:", position, " prevPos:", self.position)
             self.ignore = True
             return
         else:
             self.ignore = False
-        self.justStarted = False
-        self.prevPosition = self.position  # Save previous position
-        self.position = position  # Update position
+        self.justStarted = False            # Now not started anymore
+        self.prevPosition = self.position   # Save previous position
+        self.position = position            # Update position
         self.positionInfo = info
         self.mazeMemory[position] = info
         if info[4]:
@@ -400,27 +405,29 @@ class Algorithm:
         # edge, so just adding both combinations to dict will always update the edge
         self.routeToSelf[self.prevPosition] = self.position
 
-    """ Called when new direction is needed
-    Returns string: left right straight back (RELATIVE)
+    """ Average two positions
     """
-
     def avgT(self, a, b):
         return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
 
+    """ Calculate manhattan distance between two points
+    """
     def manhattan(self, a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
+    """ Called when new direction is needed
+    Returns relative direction: left right straight back stop
+    """
     def getDirection(self):
-
+        # Check if must ignore
         if self.ignore:
-            print("GD: ignored")
             self.ignore = False
             return STRAIGHT
 
+        # Decides the new meetingpoint which is the farthest away from the two cars
         other = (-1, -1)
         for c in self.otherPositions:
             other = self.otherPositions[c]
-
         if self.sync:
             avg = self.avgT(self.position, other)
             maxi = (-1, self.meetingPoint)
@@ -429,80 +436,71 @@ class Algorithm:
                     if not self.junctions[j]:
                         if self.manhattan(j, avg) > maxi[0]:
                             maxi = (self.manhattan(j, avg), j)
-                # print("New meeting point")
             self.meetingPoint = maxi[1]
         self.sync = False
 
+        # Saving old state in case of collision
         oldFacingDirection = self.facingDirection
         oldNextPosition = self.nextPosition
 
-        # if self.meetingPoint in self.junctions:
-        #     print(self.junctions[self.meetingPoint])
-        print("GD: entering while")
+        # Repeating this until a feasable direction is found
         while True:
-            print("GD state: ", self.solvingState)
 
+            # EXPLORING STATE
             if self.solvingState == self.SolvingStates.EXPLORE:
-                print("EXPLORE")
-                self.updateFromBuffers()
-                occupied = False  # TODO different source
+                self.updateFromBuffers()                        # Check if there are new messages received
                 newDirection = None
+                # If new position is a junction, set to discovered for now
                 if self.position in self.junctions:
                     self.junctions[self.position] = True
                 # i is relative direction: first look if I can drive straight ahead
                 for i in range(4):
                     d = self.Rel2Abs(i)
                     # If no wall in direction, if not occupied, and not aleady visited
-                    if not self.positionInfo[d] and not occupied and self.getNextPosition(d) not in self.mazeMemory:
+                    if not self.positionInfo[d] and self.getNextPosition(d) not in self.mazeMemory:
                         if newDirection is None:
                             newDirection = i
                             self.facingDirection = d
                         else:
                             # There are Enexplored open paths starting from this position
                             self.junctions[self.position] = False
+                # If there is a new direction
                 if newDirection is not None:
                     self.nextPosition = self.getNextPosition(self.facingDirection)
-                    #return self.mayGoToNextPoint(newDirection)
                     return self.mayGoToNextPoint(newDirection, oldFacingDirection, oldNextPosition)
-
                 # No possible direction
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
+            # GOTO MEETING POINT STATE
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
-                print("GOTOMEETINGPOINT")
-
+                # Get direction to meetingpoint
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
-                # for j in self.junctions:
-                #     if not self.junctions[j]:
-                #         newdir = self.getNextDirectionToPoint(j)
-
-
+                # If there is none
                 if newdir is None:
                     self.solvingState = self.SolvingStates.GOTOOPENPATH
                 else:
                     relDirection = self.Abs2Rel(newdir)
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
-                    print("GoToMeetingPoint return:", newdir)
-                    #return self.mayGoToNextPoint(relDirection)
                     return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
+            # GOTO OPEN PATH STATE
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
                 self.updateFromBuffers()
-                # Calculate target junction
-                # -> First junction with unexplored open paths
+                # Pick a junction to go to
                 for jPt, jExplored in self.junctions.items():
                     if not jExplored:
                         self.targetJunction = jPt
                         break
+                # If there are no unexplored junctions wait for new information
                 if self.targetJunction is None:
                     # No unexplored junctions
                     self.nextPosition = self.position
                     return STOP
                 else:
+                    # Get direction towards junction
                     newdir = self.getNextDirectionToPoint(self.targetJunction)
                     if newdir is None:
-                        # TODO ???
                         # Reached destination
                         self.targetJunction = None
                         self.solvingState = self.SolvingStates.EXPLORE
@@ -510,16 +508,13 @@ class Algorithm:
                         relDirection = self.Abs2Rel(newdir)
                         self.facingDirection = newdir
                         self.nextPosition = self.getNextPosition(newdir)
-                        print("GotoOpenPath return:", newdir, relDirection)
-                        #return self.mayGoToNextPoint(relDirection)
                         return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
+            # GOTO EXIT STATE
             if self.solvingState == self.SolvingStates.GOTOEXIT:
-                print("GOTOEXIT")
                 self.updateFromBuffers()
                 newdir = self.getNextDirectionToPoint(self.exitFound)
                 if newdir is None:
-                    # TODO ???
                     # Reached destination
                     self.nextPosition = self.position
                     return STOP
@@ -527,18 +522,15 @@ class Algorithm:
                     relDirection = self.Abs2Rel(newdir)
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
-                    print("GotoExit return:", newdir)
-                    #return self.mayGoToNextPoint(relDirection)
                     return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
+            # GOTO RANDOM STATE: collision occured
             if self.solvingState == self.SolvingStates.GOTORAND:
-                print("GOTORAND")
                 self.updateFromBuffers()
+                # Get a random junction
                 pt = list(self.junctions.keys())[random.randint(0, len(self.junctions)-1)]
-                print("Trying point ", pt)
                 newdir = self.getNextDirectionToPoint(pt)
                 if newdir is None:
-                    # TODO ???
                     # Reached destination
                     self.nextPosition = self.position
                     return STOP
@@ -547,35 +539,26 @@ class Algorithm:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
                     self.solvingState = self.SolvingStates.EXPLORE
-                    retval = self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
-                    return retval
+                    return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
+            # Give other threads a possibility to go
             time.sleep(0)
 
     """ Convert absolute direction to relative
     Returns relative direction
     """
-
     def Abs2Rel(self, newdir):
-        #d = newdir - self.facingDirection
-        #while d>4:
-        #    d -= 4
-        #while d<0:
-        #    d += 4
         return (newdir - self.facingDirection) % 4
-        #return d
 
     """Convert relative direction to absolute
     Returns absolute direction
     """
-
     def Rel2Abs(self, newdir):
         return (newdir + self.facingDirection) % 4
 
     """ Get next position of adjacent square in a certain direction
     Dir->Pos
     """
-
     def getNextPosition(self, newDir):
         x, y = self.position
         if newDir == NORTH:
@@ -592,7 +575,6 @@ class Algorithm:
     """ Get corresponding direction from current position to a adjacent position
     Pos->Dir
     """
-
     def getNextDirection(self, newPos):
         nx, ny = newPos
         x, y = self.position
@@ -613,7 +595,6 @@ class Algorithm:
     pt: (x,y)
     Returns: absolute direction towards next square. None if target point reached
     """
-
     def getNextDirectionToPoint(self, pt):
         routeFromPoint = [pt]
         if pt not in self.routeToSelf:
@@ -639,7 +620,6 @@ class Algorithm:
     pt's: (x,y)
     Returns: route from point to point
     """
-
     def getPathFromPointToPoint(self, routeToSelf, ptFrom, ptTo):
         pt = ptFrom
         routeFromPoint = [ptFrom]
@@ -650,17 +630,17 @@ class Algorithm:
 
         return routeFromPoint
 
-
+    """ Check for collision
+    Will stop the car if it is a collision and next round will bring the car
+    into the GOTORAND state
+    """
     def mayGoToNextPoint(self, newDir, oldFacingDirection, oldNextPosition):
-        print("MayGoToNextPoint(", newDir, ")")
-        print(" > ", self.otherPositions)
         for k,v in self.otherPositions.items():
             if self.nextPosition == v:
                 self.solvingState = self.SolvingStates.GOTORAND
                 self.facingDirection = oldFacingDirection
                 self.nextPosition = oldNextPosition
                 return STOP
-        print(" > ", self.otherNextPositions)
         for k,v in self.otherNextPositions.items():
             if self.nextPosition == v:
                 self.solvingState = self.SolvingStates.GOTORAND
@@ -671,14 +651,3 @@ class Algorithm:
 
 if __name__ == "__main__":
     pass
-
-# Notes:
-# initial prevPosition may be None if bot starts on a position and NOT outside the maze
-# Assumption for now: starting next to eachother and 2 bots in swarm
-# 0,0 is left upper corner (like in images)
-
-# 4 MAIN FUNCIONS
-# recv: receive message callback
-# step: callback called in control loop
-# newPos: called when aruco marker is scanned
-# getDirection: directly called after newPos() to get relative direction to drive in
