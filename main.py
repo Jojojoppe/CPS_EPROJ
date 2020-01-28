@@ -54,14 +54,14 @@ Returns tupe with:
 def newPosition(markerID:int):                                                                  
     global network, algoInstance
 
-    with open("last_state.pickle", "wb") as f_pickle:
-        f_pickle.write(pickle.dumps(algoInstance))
-
     x = markerID&0x0f                                                                           
     y = (markerID//16)&0x0f                                                                     
     info = network.maze[(x,y)]                                                                  
     network.position(float(x), float(y))                                                        
     algoInstance.newPos((x,y), info)                                                            
+
+
+
     return info                                                                                 
 
 def get_turn(m):                                                                                
@@ -177,6 +177,11 @@ def change_state(m_, t):
 
             # Get new direction
             direction = algoInstance.getDirection()                                             
+
+            print("Pickle state")
+            with open("last_state.pickle", "wb") as f_pickle:
+                f_pickle.write(pickle.dumps(algoInstance))
+
             if direction == algo.LEFT:                                                          
                 new_state = State.TURN_LEFT                                                     
             elif direction == algo.RIGHT:                                                       
@@ -252,6 +257,7 @@ def main():
             with open("last_state.pickle", "rb") as f_pickle:
                 algoInstance = pickle.loads(f_pickle.read())
                 algoInstance.restoreState(network)
+                network.position(*algoInstance.position)
         else:
             # Startup algorithm                                                                         
             algoInstance = algo.Algorithm(network, (x,y))                                               
