@@ -12,7 +12,7 @@ import NetEmuC.python.netemuclient as netemuclient
 from controller.space import Direction                                                          
 
 base_speed = 140                                                                                
-kp = 100                                                                                        
+kp = 77                                                                                        
 turn_angle = 75                                                                                 
 compass = Direction()                                                                           
 
@@ -96,18 +96,19 @@ def around():
     gopigo.set_right_speed(250)                                                                 
     gopigo.left_rot()                                                                           
     time.sleep(1.30)                                                                            
-    while True:                                                                                 
-        gopigo.stop()                                                                           
-        time.sleep(0.2)                                                                         
+    while True:
+        time.sleep(0.2)                                                                                                                                                                                                                           
         marker, t = aruco.get_result()                                                          
         if t > 0.01:                                                                            
-            break                                                                               
+            break    
+        gopigo.stop()                                                                           
         gopigo.set_left_speed(250)                                                              
         gopigo.set_right_speed(250)                                                             
         gopigo.left_rot()                                                                       
 
         time.sleep(0.2)                                                                         
-
+    gopigo.stop()
+    time.sleep(0.2)
 
 def do_turn(d):                                                                                 
     global turn_angle, compass                                                                  
@@ -270,24 +271,19 @@ def main():
     save_timer = time.time()                                                                    
     save_enc = (0, 0)
 
-    # print("Before while")
     
     while True:
-        # print(".", end="")
-        # print("Before step")
 
         algoInstance.step()
 
-        # print("Stepped")
-
         (marker, t) = aruco.get_result()
-
-        # print("markered", marker)
 
         # GoPiGo is not very stable, this block is just to make it stable
         if save_timer + 2 < time.time():
+            print(".")
             try:
                 new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
+                print(save_enc, new_enc)
             except TypeError:
                 print("GoPiGo breaks when you enc read sometimes just restart the main, the state should be fine")
                 gopigo.stop()
@@ -297,8 +293,8 @@ def main():
 
             if new_enc == save_enc and state == State.DRIVE:
                 rescue()
+            save_enc = new_enc
 
-        # print("Before state")
         state = change_state(marker, t)
 
 

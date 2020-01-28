@@ -92,7 +92,7 @@ def main():
 
         # Exponential moving average filter
         else:
-            filtered = 0.5*middle + 0.5*filtered
+            filtered = 0.7*middle + 0.3*filtered
 
         send = round(concat(filtered), 3)
         aruco_and_middle = (ids, send)
