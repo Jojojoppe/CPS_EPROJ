@@ -202,6 +202,27 @@ class Algorithm:
         self.guiThread.start()
 
 
+    def __getstate__(self):
+        # Copy the object's state from self.__dict__ which contains
+        # all our instance attributes. Always use the dict.copy()
+        # method to avoid modifying the original state.
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries.
+        del state['network']
+        del state['guiThread']
+        return state
+
+    def __setstate__(self, state):
+        # Restore instance attributes (i.e., filename and lineno).
+        self.__dict__.update(state)
+        # Restore the previously opened file's state. To do so, we need to
+        # reopen it and read from it until the line count is restored.
+
+    def restoreState(self, network):
+        self.network = network
+        self.guiThread = threading.Thread(target=self.gui)
+        self.guiThread.start()
+
     # Return if the meeting point is explored
     def checkMeetingPoint(self):
         return self.junctions[self.meetingPoint]
@@ -336,6 +357,7 @@ class Algorithm:
     """
 
     def newPos(self, position, info):
+        print("newPos()", position)
         if position == self.prevPosition:
             print("IGNORING pos:", position, " prevPos:", self.prevPosition)
             self.ignore = True
@@ -452,12 +474,11 @@ class Algorithm:
                         self.targetJunction = None
                         self.solvingState = self.SolvingStates.EXPLORE
                     else:
+                        relDirection = self.Abs2Rel(newdir)
                         self.facingDirection = newdir
                         self.nextPosition = self.getNextPosition(newdir)
-                        # FIXME
-
-                        print("GotoOpenPath return:", newdir)
-                        return self.mayGoToNextPoint(self.Abs2Rel(newdir))
+                        print("GotoOpenPath return:", newdir, relDirection)
+                        return self.mayGoToNextPoint(relDirection)
 
             if self.solvingState == self.SolvingStates.GOTOEXIT:
                 self.updateFromBuffers()
