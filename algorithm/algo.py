@@ -72,12 +72,18 @@ class Algorithm:
                 pygame.draw.rect(window, (255, 127, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
             # If there are other next potitions draw them
-            for k, p in self.otherNextPositions.items():
-                x, y = p
-                pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
-            for k, p in self.otherPositions.items():
-                x, y = p
-                pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+            if self.otherNextPositions is not None:
+                for k, p in self.otherNextPositions.items():
+                    if p is None:
+                        continue
+                    x, y = p
+                    pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+            if self.otherPositions is not None:
+                for k, p in self.otherPositions.items():
+                    if p is None:
+                        continue
+                    x, y = p
+                    pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
 
             # Draw route to self
