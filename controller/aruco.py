@@ -114,6 +114,7 @@ def main():
 
 
 def stop():
+    print("Aruco stop")
     raise SystemExit(0)
 
 thread = T.Thread(target=main)

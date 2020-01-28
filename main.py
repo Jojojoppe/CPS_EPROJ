@@ -94,7 +94,7 @@ def around():
     gopigo.set_left_speed(250)                                                                  
     gopigo.set_right_speed(250)                                                                 
     gopigo.left_rot()                                                                           
-    time.sleep(1.60)                                                                            
+    time.sleep(1.30)                                                                            
     while True:                                                                                 
         gopigo.stop()                                                                           
         time.sleep(0.2)                                                                         
@@ -152,14 +152,20 @@ prev_marker = -1
 
 def change_state(m_, t):
     direction = None                                                                        
-    if m_ is not None:                                                                          
-        m = int(m_)                                                                             
-    else:                                                                                       
+    if m_ is not None:  
+        m = int(m_)
+        print("Not none", m)                                                                        
+                                                                             
+    else:  
+        print("None")                                                                                     
         m = None                                                                                
     global state, prev_marker, state_timer                                                      
-    new_state = State.STOP                                                                      
+    new_state = State.STOP 
+    print("old:", state)                                                                     
 
-    if state == State.DRIVE:                                                                    
+    if state == State.DRIVE:
+        print("1")
+                                                                    
         if m is None or m == -1:                                                                
             new_state = State.DRIVE                                                             
         elif m >= 0 and m != prev_marker:                                                       
@@ -169,14 +175,16 @@ def change_state(m_, t):
             new_state = State.STOP                                                              
         else:                                                                                   
             new_state = State.DRIVE                                                             
-
-    elif state == State.STOP:                                                                   
+    elif state == State.STOP:
+        print("2")                                                                   
         prev_marker = m                                                                         
         if time.time() - 1 > state_timer:                                                       
             #direction = get_turn(m)                                                            
 
             # Get new direction
-            direction = algoInstance.getDirection()                                             
+            print("before")
+            direction = algoInstance.getDirection()
+            print("after")                                             
 
             print("Pickle state")
             with open("last_state.pickle", "wb") as f_pickle:
@@ -198,29 +206,33 @@ def change_state(m_, t):
         else:                                                                                   
             new_state = State.STOP                                                              
 
-    elif state == State.TURN_LEFT:                                                              
+    elif state == State.TURN_LEFT:
+        print("3")                                                              
         if turn_done():                                                                         
             new_state = State.DRIVE                                                             
         else:                                                                                   
             new_state = State.TURN_LEFT                                                         
 
-    elif state == State.TURN_RIGHT:                                                             
+    elif state == State.TURN_RIGHT:
+        print("4")                                                             
         if turn_done():                                                                         
             new_state = State.DRIVE                                                             
         else:                                                                                   
             new_state = State.TURN_RIGHT                                                        
 
-    elif state == State.TURN_AROUND:                                                            
+    elif state == State.TURN_AROUND:
+        print("5")                                                            
         if turn_done():                                                                         
             new_state = State.DRIVE                                                             
         else:                                                                                   
-            new_state = State.TURN_AROUND                                                       
+            new_state = State.TURN_AROUND     
+    print("Before if")
 
     if new_state != state:                                                                      
         if state == State.STOP and new_state == State.DRIVE:                                    
             gopigo.fwd()                                                                        
         state_timer = time.time()
-
+    print("new:", new_state)
     return new_state                                                                            
 
 
@@ -263,19 +275,27 @@ def main():
             algoInstance = algo.Algorithm(network, (x,y))                                               
             #newPosition(x+16*y)                                                                         
 
-    time.sleep(1)                                                                               
+    time.sleep(2)                                                                               
     gopigo.set_left_speed(0)                                                                    
     gopigo.set_right_speed(0)                                                                   
     gopigo.fwd()                                                                                
 
     save_timer = time.time()                                                                    
     save_enc = (0, 0)
+
+    # print("Before while")
     
     while True:
+        # print(".", end="")
+        # print("Before step")
 
         algoInstance.step()
 
+        # print("Stepped")
+
         (marker, t) = aruco.get_result()
+
+        # print("markered", marker)
 
         # GoPiGo is not very stable, this block is just to make it stable
         if save_timer + 2 < time.time():
@@ -283,13 +303,19 @@ def main():
                 new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
             except TypeError:
                 print("GoPiGo breaks when you enc read sometimes just restart the main, the state should be fine")
+                gopigo.stop()
+                time.sleep(0.2)
+                gopigo.stop()
                 main()
 
             if new_enc == save_enc and state == State.DRIVE:
+                print("Before rescue")
                 rescue()
 
+        # print("Before state")
         state = change_state(marker, t)
 
+        print("stated")
         
 
         if state == State.DRIVE:
@@ -311,13 +337,13 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-        gopigo.stop()
-    except KeyboardInterrupt:
-        gopigo.stop()
-        aruco.stop() 
-    except Exception as e:
-        print(str(e))
-        print("LOLOLOLOLOLOL", aruco.get_result())
-        main()
+    while True:
+        try:
+            main()
+        except KeyboardInterrupt:
+            gopigo.stop()
+            break 
+        except Exception as e:
+            print(str(e))
+            print("LOLOLOLOLOLOL", aruco.get_result())
+        
