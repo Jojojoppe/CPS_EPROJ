@@ -4,15 +4,17 @@ import pickle
 import sys
 import traceback
 from enum import Enum                                                                           
-
 import algorithm.algo as algo                                                                   
 import controller.aruco as aruco                                                                
 import gopigo                                                                                   
 import NetEmuC.python.netemuclient as netemuclient                                              
 from controller.space import Direction                                                          
 
-base_speed = 140                                                                                
-kp = 77                                                                                        
+# Base driving speed per wheel, this never changes
+base_speed = 140
+# Proportional gain                                                                               
+kp = 77 
+# Hardcoded turn angle                                                                                       
 turn_angle = 75                                                                                 
 compass = Direction()                                                                           
 
@@ -20,6 +22,7 @@ algoInstance = None
 network = None                                                                 
 
 
+# The controller for the wheels
 def get_control_out(p0):                                                                        
     # P controller                                                                              
     # P_out = P0 + Kp * e                                                                       
@@ -33,6 +36,7 @@ def get_control_out(p0):
     return left, right                                                                          
 
 
+# Drive forwards
 def drive_forwards(target):                                                                     
     left, right = get_control_out(target)                                                       
     time.sleep(0.001)                                                                           
@@ -40,19 +44,14 @@ def drive_forwards(target):
     gopigo.set_right_speed(int(right))                                                          
 
 
-"""Data received from network                                                                   
-"""                                                                                             
+# Recieve from network                                                                                        
 def rec(data:bytes, rssi:int):                                                                  
     #print("Received a packet")
     global algoInstance                                                                         
     algoInstance.recv(data, rssi)                                                               
 
 
-"""Get information of net position and update the network emulator                              
-Returns tupe with:                                                                              
-    north, east, south, west: True if wall, False if open                                       
-    final: True if exit of maze                                                                 
-"""                                                                                             
+# Get next position update from the algorithm                                                                                         
 def newPosition(markerID:int):                                                                  
     global network, algoInstance
 
@@ -61,36 +60,10 @@ def newPosition(markerID:int):
     info = network.maze[(x,y)]                                                                  
     network.position(float(x), float(y))                                                        
     algoInstance.newPos((x,y), info)                                                            
-
-
-
     return info                                                                                 
 
-def get_turn(m):                                                                                
-    # Rescue                                                                                    
 
-    if m == None:                                                                               
-        return "straight"                                                                       
-
-    # if int(m) == 4:                                                                           
-    #     return "stop"                                                                         
-
-
-    if int(m) == 300:                                                                           
-        return "straight"                                                                       
-    # m_info = newPosition(m)                                                                   
-    # # (north, east, south, west, final_pos)                                                   
-    # # TODO Add algorithm decision making here                                                 
-
-    # # For now find first open wall clockwise from north                                       
-    # dirs = ["straight", "right", "around", "left"]                                            
-    # for i in range(4):                                                                        
-    #     if not m_info[i]:                                                                     
-    #         return dirs[i]                                                                    
-
-    # return "straight"                                                                         
-    return "around"                                                                             
-
+# Turn around 180 degrees
 def around():                                                                                   
     gopigo.set_left_speed(250)                                                                  
     gopigo.set_right_speed(250)                                                                 
@@ -110,6 +83,8 @@ def around():
     gopigo.stop()
     time.sleep(0.2)
 
+
+# Turn left or right
 def do_turn(d):                                                                                 
     global turn_angle, compass                                                                  
 
@@ -134,12 +109,13 @@ def do_turn(d):
     gopigo.fwd()                                                                                
     drive_forwards(0.5)                                                                         
 
+
+# Assume turn is successful
 def turn_done():                                                                                
 
     return True                                                                                 
 
-
-
+# States for the state machine
 class State(Enum):                                                                              
     DRIVE = 1                                                                                   
     TURN_RIGHT = 2                                                                              
@@ -151,35 +127,39 @@ state = State.DRIVE
 state_timer = time.time()                                                                       
 prev_marker = -1                                                                                
 
+
+# Change the state based on the previous state and if we see an aruco marker
 def change_state(m_, t):
+
+    global state, prev_marker, state_timer  
+
     direction = None                                                                        
     if m_ is not None:  
-        m = int(m_)
-                                                                             
+        m = int(m_)                                                                     
     else:  
-        m = None                                                                                
-    global state, prev_marker, state_timer                                                      
+        m = None 
+
     new_state = State.STOP 
 
     if state == State.DRIVE:
                                                                     
         if m is None or m == -1:                                                                
             new_state = State.DRIVE                                                             
-        elif m >= 0 and m != prev_marker:                                                       
-            # Marker found
-            # New position is sent to the maze                                                  
+        elif m >= 0 and m != prev_marker:                                                                                                  
             newPosition(m)
             new_state = State.STOP                                                              
         else:                                                                                   
-            new_state = State.DRIVE                                                             
-    elif state == State.STOP:
-        prev_marker = m                                                                         
-        if time.time() - 1 > state_timer:                                                       
-            #direction = get_turn(m)                                                            
+            new_state = State.DRIVE
 
-            # Get new direction
+    elif state == State.STOP:
+
+        prev_marker = m  
+        # Check if we waited for 1 second                                                                       
+        if time.time() - 1 > state_timer:   
+            # Get the direction from the algorithm                                                    
             direction = algoInstance.getDirection()
 
+            # Save the current state, since we got new directions
             with open("last_state.pickle", "wb") as f_pickle:
                 f_pickle.write(pickle.dumps(algoInstance))
 
@@ -200,23 +180,27 @@ def change_state(m_, t):
             new_state = State.STOP                                                              
 
     elif state == State.TURN_LEFT:
+
         if turn_done():                                                                         
             new_state = State.DRIVE                                                             
         else:                                                                                   
             new_state = State.TURN_LEFT                                                         
 
     elif state == State.TURN_RIGHT:
+
         if turn_done():                                                                         
             new_state = State.DRIVE                                                             
         else:                                                                                   
             new_state = State.TURN_RIGHT                                                        
 
     elif state == State.TURN_AROUND:
+
         if turn_done():                                                                         
             new_state = State.DRIVE                                                             
         else:                                                                                   
             new_state = State.TURN_AROUND     
 
+    # We changed state
     if new_state != state:                                                                      
         if state == State.STOP and new_state == State.DRIVE:                                    
             gopigo.fwd()                                                                        
@@ -224,9 +208,9 @@ def change_state(m_, t):
     return new_state                                                                            
 
 
-def rescue():                                                                                   
-    # This is only called when gopigo stops driving for no reason                               
-    # The only way to fix it is to stop it and then restart                                     
+# This is only called when gopigo stops driving for no reason                               
+# The only way to fix it is to stop it and then restart       
+def rescue():                                                                                               
     gopigo.stop()                                                                               
     print("Rescue")                                                                             
     time.sleep(1)                                                                               
@@ -235,16 +219,16 @@ def rescue():
     gopigo.fwd()                                                                                
     time.sleep(0.2)                                                                             
 
+
+# Main control function
 def main():                                                                                     
     global network, state, prev_marker, algoInstance                                            
 
     if network is None:
         # Setup network                                                                             
-        # Read ip address
         ip = "localhost"
         with open("server.ip") as f:
             ip = f.read()
-        # TODO STARTING POSITION                                                                    
         x,y = 1,0                                                                                   
         network = netemuclient.NetEmuClient(rec, ip, 8080)                                 
         network.start()                                                                             
@@ -253,34 +237,37 @@ def main():
         network.txpower(0.02)    
 
     if algoInstance is None:
+        # If the program is started with arguments, this will load the last saved state
         if len(sys.argv)>1:
             with open("last_state.pickle", "rb") as f_pickle:
                 algoInstance = pickle.loads(f_pickle.read())
                 algoInstance.restoreState(network)
                 network.position(*algoInstance.position)
+        # Start the algorithm without a saved state
         else:
-            # Startup algorithm                                                                         
             algoInstance = algo.Algorithm(network, (x,y))                                               
-            #newPosition(x+16*y)                                                                         
 
+    # Give everything time to warm up
     time.sleep(2)                                                                               
     gopigo.set_left_speed(0)                                                                    
     gopigo.set_right_speed(0)                                                                   
     gopigo.fwd()                                                                                
 
-    save_timer = time.time()                                                                    
+    save_timer = time.time() 
+    # Save the latest encoder reading                                                                   
     save_enc = (0, 0)
 
     
     while True:
 
+        # Move in the alorithm
         algoInstance.step()
 
+        # Call the latest camera results
         (marker, t) = aruco.get_result()
 
         # GoPiGo is not very stable, this block is just to make it stable
         if save_timer + 2 < time.time():
-            print(".")
             try:
                 new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
                 print(save_enc, new_enc)
@@ -291,10 +278,12 @@ def main():
                 gopigo.stop()
                 main()
 
+            # We have been stopping while we should be driving
             if new_enc == save_enc and state == State.DRIVE:
                 rescue()
             save_enc = new_enc
 
+        # Update the state
         state = change_state(marker, t)
 
 
@@ -317,6 +306,8 @@ def main():
 
 
 if __name__ == "__main__":
+
+    # No matter what, just rerun the main
     while True:
         try:
             main()
@@ -325,10 +316,9 @@ if __name__ == "__main__":
             gopigo.stop()
             break 
         except ValueError as e:
-            print("Value error! ", str(e))
+            print("Value error!, probably within the algorithm ", str(e))
             traceback.print_exc()
         except Exception as e:
-            print(str(e))
             traceback.print_exc()
-            print("LOLOLOLOLOLOL =S", aruco.get_result())
+            print("RERUN MAIN WITH BROAD EXCEPTION", aruco.get_result())
         
