@@ -162,6 +162,7 @@ class Algorithm:
 
         # Internal state variables
         self.position = position
+        self.justStarted = True
         self.prevPosition = None
         self.nextPosition = None
         self.positionInfo = (False, False, False, False, False)
@@ -183,6 +184,7 @@ class Algorithm:
         self.routeToSelf = {}
         # Open paths (not yet explored)
         self.junctions = {}  # [pt] = (bool explored)
+        self.junctions[position] = False
         self.targetJunction = None
         self.possibleNewMeetingPoints = set()
 
@@ -255,6 +257,7 @@ class Algorithm:
         self.updateOtherNextPositions.append((otherID,otherNextPosition))
 
         # Update maze memory
+        print("Updating maze memory")
         for k, v in otherMazeMemory.items():
             if k not in self.mazeMemory:
                 self.updateMazeMemory.append((k, v))
@@ -263,6 +266,7 @@ class Algorithm:
         # FIXME self.meetingpoint? Not the same as mine?
         # FIXME self on meeting point?
         # Update complete routeToSelf map
+        print("Update routeToSelf")
         for k, v in otherRouteToSelf.items():
             if k not in self.routeToSelf:
                 self.updateRouteToSelf.append((k, v))
@@ -286,6 +290,7 @@ class Algorithm:
             self.updateRouteToSelf.append((p, np))
 
         # Update junctions
+        print("Update junctions")
         for k, v in otherjunctions.items():
             # If new junction
             if k not in self.junctions:
@@ -302,6 +307,7 @@ class Algorithm:
             self.exitFound = otherExitFound
 
         self.mayUpdate = True
+        print("Done receiving")
 
     """[summary]
     """
@@ -343,6 +349,7 @@ class Algorithm:
 
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter % 10 == 0:
+            print("Send a packet")
             self.network.send(pickle.dumps(
                 [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
@@ -362,12 +369,13 @@ class Algorithm:
     def newPos(self, position, info):
         print("newPos()", position, self.prevPosition)
         # FIXME next test do not return
-        if position == self.position:
+        if position == self.position and not self.justStarted:
             print("IGNORING pos:", position, " prevPos:", self.position)
             self.ignore = True
             return
         else:
             self.ignore = False
+        self.justStarted = False
         self.prevPosition = self.position  # Save previous position
         self.position = position  # Update position
         self.positionInfo = info
