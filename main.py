@@ -43,7 +43,7 @@ def drive_forwards(target):
 """Data received from network                                                                   
 """                                                                                             
 def rec(data:bytes, rssi:int):                                                                  
-    print("Received a packet")
+    #print("Received a packet")
     global algoInstance                                                                         
     algoInstance.recv(data, rssi)                                                               
 

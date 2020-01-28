@@ -71,6 +71,14 @@ class Algorithm:
                 x,y = self.prevPosition
                 pygame.draw.rect(window, (255, 127, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
+            # If there are other next potitions draw them
+            for k, p in self.otherNextPositions.items():
+                x, y = p
+                pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+            for k, p in self.otherPositions.items():
+                x, y = p
+                pygame.draw.rect(window, (0, 255, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+
 
             # Draw route to self
             for k, v in self.routeToSelf.items():
@@ -138,7 +146,7 @@ class Algorithm:
             # Draw other positions
             for k, p in self.otherPositions.items():
                 x, y = p
-                pygame.draw.circle(window, (0, 255, 255), (int(gOffs + (x + 0.5) * gGS), int(gOffs + (y + 0.5) * gGS)),
+                pygame.draw.circle(window, (0, 0, 0), (int(gOffs + (x + 0.5) * gGS), int(gOffs + (y + 0.5) * gGS)),
                                    2, 0)
 
             pygame.display.update()
@@ -255,7 +263,7 @@ class Algorithm:
         self.updateOtherNextPositions.append((otherID,otherNextPosition))
 
         # Update maze memory
-        print("Updating maze memory")
+        #print("Updating maze memory")
         for k, v in otherMazeMemory.items():
             if k not in self.mazeMemory:
                 self.updateMazeMemory.append((k, v))
@@ -264,7 +272,7 @@ class Algorithm:
         # FIXME self.meetingpoint? Not the same as mine?
         # FIXME self on meeting point?
         # Update complete routeToSelf map
-        print("Update routeToSelf")
+        #print("Update routeToSelf")
         for k, v in otherRouteToSelf.items():
             if k not in self.routeToSelf:
                 self.updateRouteToSelf.append((k, v))
@@ -288,7 +296,7 @@ class Algorithm:
             self.updateRouteToSelf.append((p, np))
 
         # Update junctions
-        print("Update junctions")
+        #print("Update junctions")
         for k, v in otherjunctions.items():
             # If new junction
             if k not in self.junctions:
@@ -305,7 +313,7 @@ class Algorithm:
             self.exitFound = otherExitFound
 
         self.mayUpdate = True
-        print("Done receiving")
+        #print("Done receiving")
 
     """[summary]
     """
@@ -348,7 +356,7 @@ class Algorithm:
 
         # Broadcast maze, routeToSeld and unexploredJunction
         if self.counter % 10 == 0:
-            print("Send a packet")
+            #print("Send a packet")
             self.network.send(pickle.dumps(
                 [self.mazeMemory, self.routeToSelf, self.junctions, self.position, self.ID, self.meetingPoint, self.sync, self.exitFound, self.nextPosition]
             ))
@@ -419,6 +427,9 @@ class Algorithm:
             self.meetingPoint = maxi[1]
         self.sync = False
 
+        oldFacingDirection = self.facingDirection
+        oldNextPosition = self.nextPosition
+
         # if self.meetingPoint in self.junctions:
         #     print(self.junctions[self.meetingPoint])
         print("GD: entering while")
@@ -426,6 +437,7 @@ class Algorithm:
             print("GD state: ", self.solvingState)
 
             if self.solvingState == self.SolvingStates.EXPLORE:
+                print("EXPLORE")
                 self.updateFromBuffers()
                 occupied = False  # TODO different source
                 newDirection = None
@@ -444,16 +456,16 @@ class Algorithm:
                             self.junctions[self.position] = False
                 if newDirection is not None:
                     self.nextPosition = self.getNextPosition(self.facingDirection)
-                    return self.mayGoToNextPoint(newDirection)
+                    #return self.mayGoToNextPoint(newDirection)
+                    return self.mayGoToNextPoint(newDirection, oldFacingDirection, oldNextPosition)
 
                 # No possible direction
                 self.solvingState = self.SolvingStates.GOTOMEETINGPOINT
 
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
+                print("GOTOMEETINGPOINT")
 
-                print("GD GTMP pre GetNextDirectionToPoint")
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
-                print("new direction gotomeetingpoint: ", newdir)
                 # for j in self.junctions:
                 #     if not self.junctions[j]:
                 #         newdir = self.getNextDirectionToPoint(j)
@@ -465,8 +477,9 @@ class Algorithm:
                     relDirection = self.Abs2Rel(newdir)
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
-                    print("GotMeetingPoint return:", newdir)
-                    return self.mayGoToNextPoint(relDirection)
+                    print("GoToMeetingPoint return:", newdir)
+                    #return self.mayGoToNextPoint(relDirection)
+                    return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
             if self.solvingState == self.SolvingStates.GOTOOPENPATH:
                 self.updateFromBuffers()
@@ -492,7 +505,8 @@ class Algorithm:
                         self.facingDirection = newdir
                         self.nextPosition = self.getNextPosition(newdir)
                         print("GotoOpenPath return:", newdir, relDirection)
-                        return self.mayGoToNextPoint(relDirection)
+                        #return self.mayGoToNextPoint(relDirection)
+                        return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
             if self.solvingState == self.SolvingStates.GOTOEXIT:
                 print("GOTOEXIT")
@@ -504,26 +518,31 @@ class Algorithm:
                     self.nextPosition = self.position
                     return STOP
                 else:
+                    relDirection = self.Abs2Rel(newdir)
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
                     print("GotoExit return:", newdir)
-                    return self.mayGoToNextPoint(self.Abs2Rel(newdir))
+                    #return self.mayGoToNextPoint(relDirection)
+                    return self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
 
             if self.solvingState == self.SolvingStates.GOTORAND:
                 print("GOTORAND")
                 self.updateFromBuffers()
-                newdir = self.getNextDirectionToPoint(list(self.junctions.keys())[random.randint(0, len(self.junctions)-1)])
+                pt = list(self.junctions.keys())[random.randint(0, len(self.junctions)-1)]
+                print("Trying point ", pt)
+                newdir = self.getNextDirectionToPoint(pt)
                 if newdir is None:
                     # TODO ???
                     # Reached destination
                     self.nextPosition = self.position
                     return STOP
                 else:
+                    relDirection = self.Abs2Rel(newdir)
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
                     self.solvingState = self.SolvingStates.EXPLORE
-                    print("GotoRand return:", newdir)
-                    return self.mayGoToNextPoint(self.Abs2Rel(newdir))
+                    retval = self.mayGoToNextPoint(relDirection, oldFacingDirection, oldNextPosition)
+                    return retval
 
             time.sleep(0)
 
@@ -626,17 +645,21 @@ class Algorithm:
         return routeFromPoint
 
 
-    def mayGoToNextPoint(self, newDir):
+    def mayGoToNextPoint(self, newDir, oldFacingDirection, oldNextPosition):
         print("MayGoToNextPoint(", newDir, ")")
         print(" > ", self.otherPositions)
         for k,v in self.otherPositions.items():
             if self.nextPosition == v:
                 self.solvingState = self.SolvingStates.GOTORAND
+                self.facingDirection = oldFacingDirection
+                self.nextPosition = oldNextPosition
                 return STOP
         print(" > ", self.otherNextPositions)
         for k,v in self.otherNextPositions.items():
             if self.nextPosition == v:
                 self.solvingState = self.SolvingStates.GOTORAND
+                self.facingDirection = oldFacingDirection
+                self.nextPosition = oldNextPosition
                 return STOP
         return newDir
 
