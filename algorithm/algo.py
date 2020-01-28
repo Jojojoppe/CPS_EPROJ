@@ -3,13 +3,11 @@ import random
 import sys
 import pickle
 import time
-# from NetworkEmulator.netemuclient import NetEmuClient
 
 import threading
 import pygame
 
 
-# FIXME convert to strings afterwards
 NORTH = 0
 EAST = 1
 SOUTH = 2
@@ -21,7 +19,7 @@ BACK = 2
 LEFT = 3
 STOP = 4
 
-TTL = 20
+TTL = 200
 
 """Algorithm class
 """
@@ -328,6 +326,7 @@ class Algorithm:
         for upd in self.updatejunctions:
             self.junctions[upd[0]] = upd[1]
         self.updatejunctions.clear()
+
         for upd in self.updateOtherPositions:
             self.otherPositions[upd[0]] = upd[1]
             self.otherPositionTTL[upd[0]] = TTL
@@ -496,6 +495,7 @@ class Algorithm:
                         return self.mayGoToNextPoint(relDirection)
 
             if self.solvingState == self.SolvingStates.GOTOEXIT:
+                print("GOTOEXIT")
                 self.updateFromBuffers()
                 newdir = self.getNextDirectionToPoint(self.exitFound)
                 if newdir is None:
@@ -510,7 +510,7 @@ class Algorithm:
                     return self.mayGoToNextPoint(self.Abs2Rel(newdir))
 
             if self.solvingState == self.SolvingStates.GOTORAND:
-                print("GOTO RANDOM")
+                print("GOTORAND")
                 self.updateFromBuffers()
                 newdir = self.getNextDirectionToPoint(list(self.junctions.keys())[random.randint(0, len(self.junctions)-1)])
                 if newdir is None:
@@ -590,33 +590,22 @@ class Algorithm:
     """
 
     def getNextDirectionToPoint(self, pt):
-        print("getNextDirectionToPoint()", pt)
         routeFromPoint = [pt]
         if pt not in self.routeToSelf:
-            print("pt not in self.routeToSelf")
             return None
         while pt != self.position:
-            print("while pt is self.position")
             if pt in self.routeToSelf:
-                print("pt in self.routeToSelf")
                 routeFromPoint.append(self.routeToSelf[pt])
                 pt = self.routeToSelf[pt]
-        print("Exited while loop")
         # Check if at the meeting point
         if len(routeFromPoint) == 1:
-            print("len(routeFromPoint)==1")
             return None
 
         else:
-            print("len(routeFromPint)!-==1")
             # Found route from meeting point to me
             nextPos = routeFromPoint[-2]
-            print("routeFromPoint", routeFromPoint)
-            print("routeToSelf", self.routeToSelf)
             # Next position is routeToMeetingPoint[1]
-            print("Pre getNextDirection", nextPos)
             newdir = self.getNextDirection(nextPos)
-            print("newdis =", newdir)
             return newdir
 
     """ Get path from position to a specific known point in
@@ -638,10 +627,13 @@ class Algorithm:
 
 
     def mayGoToNextPoint(self, newDir):
+        print("MayGoToNextPoint(", newDir, ")")
+        print(" > ", self.otherPositions)
         for k,v in self.otherPositions.items():
             if self.nextPosition == v:
                 self.solvingState = self.SolvingStates.GOTORAND
                 return STOP
+        print(" > ", self.otherNextPositions)
         for k,v in self.otherNextPositions.items():
             if self.nextPosition == v:
                 self.solvingState = self.SolvingStates.GOTORAND
