@@ -69,6 +69,9 @@ class Algorithm:
             if self.nextPosition is not None:
                 x,y = self.nextPosition
                 pygame.draw.rect(window, (255, 0, 255), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
+            if self.prevPosition is not None:
+                x,y = self.prevPosition
+                pygame.draw.rect(window, (255, 127, 0), (gOffs + x * gGS, gOffs + y * gGS, gGS, gGS))
 
 
             # Draw route to self
@@ -357,9 +360,10 @@ class Algorithm:
     """
 
     def newPos(self, position, info):
-        print("newPos()", position)
-        if position == self.prevPosition:
-            print("IGNORING pos:", position, " prevPos:", self.prevPosition)
+        print("newPos()", position, self.prevPosition)
+        # FIXME next test do not return
+        if position == self.position:
+            print("IGNORING pos:", position, " prevPos:", self.position)
             self.ignore = True
             return
         else:
@@ -388,6 +392,7 @@ class Algorithm:
     def getDirection(self):
 
         if self.ignore:
+            print("GD: ignored")
             self.ignore = False
             return STRAIGHT
 
@@ -409,7 +414,9 @@ class Algorithm:
 
         # if self.meetingPoint in self.junctions:
         #     print(self.junctions[self.meetingPoint])
+        print("GD: entering while")
         while True:
+            print("GD state: ", self.solvingState)
 
             if self.solvingState == self.SolvingStates.EXPLORE:
                 self.updateFromBuffers()
@@ -437,9 +444,9 @@ class Algorithm:
 
             if self.solvingState == self.SolvingStates.GOTOMEETINGPOINT:
 
+                print("GD GTMP pre GetNextDirectionToPoint")
                 newdir = self.getNextDirectionToPoint(self.meetingPoint)
                 print("new direction gotomeetingpoint: ", newdir)
-                # FIXME HEEEEEEEEEEEEEEERRRRRRREEEEEEE AT END RETURNS 0 but should be 2. newdir is correct but probably abs2rel does not work properly
                 # for j in self.junctions:
                 #     if not self.junctions[j]:
                 #         newdir = self.getNextDirectionToPoint(j)
@@ -575,23 +582,33 @@ class Algorithm:
     """
 
     def getNextDirectionToPoint(self, pt):
+        print("getNextDirectionToPoint()", pt)
         routeFromPoint = [pt]
         if pt not in self.routeToSelf:
+            print("pt not in self.routeToSelf")
             return None
         while pt != self.position:
+            print("while pt is self.position")
             if pt in self.routeToSelf:
+                print("pt in self.routeToSelf")
                 routeFromPoint.append(self.routeToSelf[pt])
                 pt = self.routeToSelf[pt]
-
+        print("Exited while loop")
         # Check if at the meeting point
         if len(routeFromPoint) == 1:
+            print("len(routeFromPoint)==1")
             return None
 
         else:
+            print("len(routeFromPint)!-==1")
             # Found route from meeting point to me
             nextPos = routeFromPoint[-2]
+            print("routeFromPoint", routeFromPoint)
+            print("routeToSelf", self.routeToSelf)
             # Next position is routeToMeetingPoint[1]
+            print("Pre getNextDirection", nextPos)
             newdir = self.getNextDirection(nextPos)
+            print("newdis =", newdir)
             return newdir
 
     """ Get path from position to a specific known point in
