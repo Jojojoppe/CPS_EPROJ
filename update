@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TAR's needed directories and files for the bots and send it to them using the distrun script
+# distrun will send a local file to a remote destination and executes a command
+# distrun <local src> <remote dst> <remote cmd>
+
 tar -czf x.tar.gz NetEmuC controller algorithm
 distrun/distrun server.ip EPROJ/server.ip ""
 distrun/distrun main.py EPROJ/main.py ""
