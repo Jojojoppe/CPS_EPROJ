@@ -302,5 +302,5 @@ if __name__ == "__main__":
         aruco.stop() 
     except Exception as e:
         print(str(e))
-        print("LOLOLOLOLOLOL")
+        print("LOLOLOLOLOLOL", aruco.get_result())
         main()
