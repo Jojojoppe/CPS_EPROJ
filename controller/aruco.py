@@ -14,6 +14,8 @@ x_res = 320
 camera.resolution = (x_res, 240)
 camera.framerate = 32
 camera.rotation = 180
+camera.exposure_mode = 'sports'
+print(camera.iso)
 rawCapture = PiRGBArray(camera, size=(320, 240))
 six_by_six = False
 avg = []
@@ -57,7 +59,7 @@ def main():
 
         corners,ids,rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-        # marker = aruco.drawDetectedMarkers(gray, corners)
+        marker = aruco.drawDetectedMarkers(gray, corners)
 
         erdil = cv2.erode(gray, kernel, iterations=5)
         erdil = cv2.dilate(erdil, kernel, iterations=5)
@@ -103,7 +105,7 @@ def main():
 
 
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
-        # cv2.imshow("Marker", marker)
+        cv2.imshow("Marker", image)
         cv2.imshow("Result", res)
 
         key = cv2.waitKey(1) & 0xFF
