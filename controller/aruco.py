@@ -48,6 +48,8 @@ def concat(raw):
 
 def main():
     global aruco_and_middle, stop_pls, filtered
+    color = (255, 255, 0) 
+
 
     # Set aruco sizes and then load the dictionaries
     if six_by_six:
@@ -65,7 +67,7 @@ def main():
 
         corners,ids,rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-        marker = aruco.drawDetectedMarkers(gray, corners)
+        marker = aruco.drawDetectedMarkers(gray, corners, ids, borderColor=color)
 
         erdil = cv2.erode(gray, kernel, iterations=5)
         erdil = cv2.dilate(erdil, kernel, iterations=5)
@@ -109,9 +111,11 @@ def main():
             e = time.time()
             avg.append(e-b)
 
-
         # The image displays
         cv2.drawContours(res, contours, -1, (0,255,0), 3)
+        res = cv2.circle(res, (int(filtered), 100), 5, color, 3) 
+
+
         cv2.imshow("Marker", marker)
         cv2.imshow("Result", res)
 

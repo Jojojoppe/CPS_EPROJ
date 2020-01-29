@@ -11,11 +11,11 @@ import NetEmuC.python.netemuclient as netemuclient
 from controller.space import Direction                                                          
 
 # Base driving speed per wheel, this never changes
-base_speed = 140
+base_speed = 135
 # Proportional gain                                                                               
-kp = 77 
+kp = 95 
 # Hardcoded turn angle                                                                                       
-turn_angle = 75                                                                                 
+turn_angle = 82                                                                                 
 compass = Direction()                                                                           
 
 algoInstance = None            
@@ -23,13 +23,13 @@ network = None
 
 
 # The controller for the wheels
-def get_control_out(p0):                                                                        
+def get_control_out(target):                                                                        
     # P controller                                                                              
     # P_out = P0 + Kp * e                                                                       
     # Per wheel assume that P0 is a constant for driving spesified in this file                 
 
     global base_speed                                                                           
-    error = p0 - 0.5 # Deviation from middle                                                    
+    error = target - 0.5 # Deviation from middle                                                    
                                                                                                 
     left  = base_speed + kp * error                                                             
     right = base_speed - kp * error                                                             
@@ -267,10 +267,9 @@ def main():
         (marker, t) = aruco.get_result()
 
         # GoPiGo is not very stable, this block is just to make it stable
-        if save_timer + 2 < time.time():
+        if save_timer + 3 < time.time():
             try:
                 new_enc = (gopigo.enc_read(0), gopigo.enc_read(1))
-                print(save_enc, new_enc)
             except TypeError:
                 print("GoPiGo breaks when you enc read sometimes just restart the main, the state should be fine")
                 gopigo.stop()
