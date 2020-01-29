@@ -452,7 +452,12 @@ class Algorithm:
                 else:
                     self.facingDirection = newdir
                     self.nextPosition = self.getNextPosition(newdir)
-                    return self.mayGoToNextPoint(self.Abs2Rel(newdir))
+                    retval = self.mayGoToNextPoint(self.Abs2Rel(newdir))
+                    if retval == STOP:
+                        self.solvingState = self.SolvingStates.GOTOEXIT
+                        return STOP
+                    else:
+                        return retval
 
             if self.solvingState == self.SolvingStates.GOTORAND:
                 print("GOTO RANDOM")
