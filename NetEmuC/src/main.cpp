@@ -90,22 +90,22 @@ void * GUI(void * params){
         // Draw exit
 
         SDL_SetRenderDrawColor(rend, 0, 255, 255, SDL_ALPHA_OPAQUE);
-        DrawCircle(rend, 16+15*16+8, 16+15*16+8, 2);
+        DrawCircle(rend, 16+15*32+16, 16+15*32+16, 2);
 
         SDL_SetRenderDrawColor(rend, 0, 0, 0, SDL_ALPHA_OPAQUE);
         for(int x=0; x<maze.width; x++){
             for(int y=0; y<maze.height; y++){
                 if(maze.grid[std::tuple<int,int>(x,y)].west){
-                    SDL_RenderDrawLine(rend, 16+x*16, 16+y*16, 16+x*16, 16+(y+1)*16);
+                    SDL_RenderDrawLine(rend, 16+x*32, 16+y*32, 16+x*32, 16+(y+1)*32);
                 }
                 if(maze.grid[std::tuple<int,int>(x,y)].north){
-                    SDL_RenderDrawLine(rend, 16+x*16, 16+y*16, 16+(x+1)*16, 16+y*16);
+                    SDL_RenderDrawLine(rend, 16+x*32, 16+y*32, 16+(x+1)*32, 16+y*32);
                 }
                 if(maze.grid[std::tuple<int,int>(x,y)].east){
-                    SDL_RenderDrawLine(rend, 16+(x+1)*16, 16+y*16, 16+(x+1)*16, 16+(y+1)*16);
+                    SDL_RenderDrawLine(rend, 16+(x+1)*32, 16+y*32, 16+(x+1)*32, 16+(y+1)*32);
                 }
                 if(maze.grid[std::tuple<int,int>(x,y)].south){
-                    SDL_RenderDrawLine(rend, 16+x*16, 16+(y+1)*16, 16+(x+1)*16, 16+(y+1)*16);
+                    SDL_RenderDrawLine(rend, 16+x*32, 16+(y+1)*32, 16+(x+1)*32, 16+(y+1)*32);
                 }
             }
         }
@@ -117,25 +117,25 @@ void * GUI(void * params){
         for(auto& c : clients){
             if(c==NULL) continue;
             SDL_SetRenderDrawColor(rend, 255, 0, 0, SDL_ALPHA_OPAQUE);
-            DrawCircle(rend, 16+c->x*16+8, 16+c->y*16+8, 2);
+            DrawCircle(rend, 16+c->x*32+16, 16+c->y*32+16, 2);
 
             // Draw RSSI lines
             float dist = c->calculateDistance(noiseFloor);
-            uint32_t radius = (uint32_t)(16*dist);
+            uint32_t radius = (uint32_t)(32*dist);
             if(c->sent){
                 SDL_SetRenderDrawColor(rend, 255, 0, 0, SDL_ALPHA_OPAQUE);
             }else{
                 SDL_SetRenderDrawColor(rend, 0, 0, 255, SDL_ALPHA_OPAQUE);
             }
             c->sent = false;
-            DrawCircle(rend, 16+c->x*16+8, 16+c->y*16+8, radius);
+            DrawCircle(rend, 16+c->x*32+16, 16+c->y*32+16, radius);
 
             // Draw lines of sent packets
             SDL_SetRenderDrawColor(rend, 0, 0, 0, SDL_ALPHA_OPAQUE);
             for(int id : c->sentToList){
                 if(clients[id]==NULL) continue;
-                SDL_RenderDrawLine(rend, 16+c->x*16+8, 16+c->y*16+8, 
-                    16+clients[id]->x*16+8, 16+clients[id]->y*16+8);
+                SDL_RenderDrawLine(rend, 16+c->x*32+16, 16+c->y*32+16, 
+                    16+clients[id]->x*32+16, 16+clients[id]->y*32+16);
             }
 
             c->sentToList.clear();
@@ -270,7 +270,7 @@ int main(int argc, char ** argv){
     SDL_Window * win = SDL_CreateWindow("NetEmuC",
                                         SDL_WINDOWPOS_CENTERED, 
                                         SDL_WINDOWPOS_CENTERED, 
-                                        16*width+32, 16*height+32, 0);
+                                        32*width+32, 32*height+32, 0);
 
     // Start GUI thread
     pthread_t t_gui;
