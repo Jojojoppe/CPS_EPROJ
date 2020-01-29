@@ -1,13 +1,16 @@
 #/bin/bash
 
-BOT1="130.89.83.95"
-BOT2="130.89.80.166"
+# IP ADDRESSES OF THE BOTS
+BOT1="130.89.87.158"
+BOT2="130.89.83.95"
 #BOT3="130.89.80.215"
 
+$ GET ARGUMENTS
 SRC=$(pwd)/$1
 DST=$2
 CMD=$3
 
-#cat $SRC | ssh pi@$BOT1 "cat > "$DST "; "$CMD &
+$ CAT LOCAL FILES, SEND OVER SSH AND EXECUTE CMD
+cat $SRC | ssh pi@$BOT1 "cat > "$DST "; "$CMD &
 cat $SRC | ssh pi@$BOT2 "cat > "$DST "; "$CMD &
 #cat $SRC | ssh pi@$BOT3 "cat > "$DST "; "$CMD &
