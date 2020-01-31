@@ -3,6 +3,8 @@ import time
 import NetEmuC.python.netemuclient as netemuclient
 import algorithm.algo as algo
 import sys
+import os
+import signal
 
 algoInstance = None
 
@@ -37,7 +39,7 @@ def main():
     network.start()
     network.waitForMaze()
     network.position(x, y)
-    network.txpower(0.02)
+    network.txpower(1)
 
     # Starup algorithm
     algoInstance = algo.Algorithm(network, (x,y))
@@ -46,7 +48,7 @@ def main():
     counter = 0
     while True:
         algoInstance.step()
-        time.sleep(0.050)
+        time.sleep(0.005)
         counter += 1
         if counter == 20:
             counter = 0
@@ -60,4 +62,12 @@ if __name__ == "__main__":
         try:
             main()
         except AttributeError:
-            main() 
+            main()
+        except Exception:
+            print(algoInstance.counter)
+            network.stop()
+            sys.exit()
+            exit()
+            quit()
+            os._exit(0)
+            os.kill(os.getpid(), signal.SIGINT)

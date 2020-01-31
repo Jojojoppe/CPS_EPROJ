@@ -53,6 +53,10 @@ class NetEmuClient(threading.Thread):
         dat = struct.pack('<I', len(data)+2) + b'\x00\x00' + data
         self.socket.sendall(dat)
 
+    def sendExit(self):
+        dat = struct.pack('<I',2) + b'\xff\x00'
+        self.socket.sendall(dat)
+
     def _sendControl(self):
         dat = struct.pack('<I', 13) + b'\x01' + struct.pack('<fff', self.txp, self.x, self.y)
         self.socket.sendall(dat)
@@ -79,7 +83,6 @@ class NetEmuClient(threading.Thread):
             if dat==b'':
                 print("Server disconnected")
                 self.stop()
-                sys.exit(0)
             elif dat is not None:
                 buf += dat
 

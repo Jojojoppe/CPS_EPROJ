@@ -45,6 +45,12 @@ void Client::recv(uint8_t * data, uint32_t length){
         this->x = fdata[1];
         this->y = fdata[2];
         this->calculateLoss();
+
+    }else if(type==0xff){
+
+        // END REACHED, SHUTDOWN
+        exit(0);
+
     }else{
         // DATA MESSAGE
         for(int i=0; i<this->clients->size(); i++){
@@ -68,6 +74,7 @@ void Client::recv(uint8_t * data, uint32_t length){
 
 void Client::calculateLoss(){
     this->L = this->txp*FSPL*Dt*Dr*pow(lambda/1000,2)/39.48;
+    printf("L=%f\r\n", this->L);
 }
 
 float Client::calculateRSSI(float distance){

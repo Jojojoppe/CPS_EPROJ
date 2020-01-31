@@ -345,6 +345,8 @@ class Algorithm:
         # Every EDGE (between two points) needs data. problem: 1->2 and 2->1 are same
         # edge, so just adding both combinations to dict will always update the edge
         self.routeToSelf[self.prevPosition] = self.position
+        if info[4]:
+            self.network.sendExit()
 
     """ Called when new direction is needed
     Returns string: left right straight back (RELATIVE)
@@ -460,7 +462,6 @@ class Algorithm:
                         return retval
 
             if self.solvingState == self.SolvingStates.GOTORAND:
-                print("GOTO RANDOM")
                 self.updateFromBuffers()
                 newdir = self.getNextDirectionToPoint(list(self.junctions.keys())[random.randint(0, len(self.junctions)-1)])
                 if newdir is None:
